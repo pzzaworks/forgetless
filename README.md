@@ -1,19 +1,11 @@
-<p align="center">
-  <h1 align="center">Forgetless</h1>
-  <p align="center">
-    <strong>Smart context management for LLMs — never forget what matters.</strong>
-  </p>
-</p>
+# Forgetless
 
-<p align="center">
-  <a href="https://crates.io/crates/forgetless"><img src="https://img.shields.io/crates/v/forgetless.svg" alt="Crates.io"></a>
-  <a href="https://docs.rs/forgetless"><img src="https://docs.rs/forgetless/badge.svg" alt="Documentation"></a>
-  <a href="https://github.com/forgetless/forgetless/actions"><img src="https://github.com/forgetless/forgetless/workflows/CI/badge.svg" alt="CI Status"></a>
-  <a href="https://codecov.io/gh/forgetless/forgetless"><img src="https://codecov.io/gh/forgetless/forgetless/branch/main/graph/badge.svg" alt="Coverage"></a>
-  <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT"></a>
-</p>
+Smart context management for LLMs — never forget what matters.
 
----
+[![Crates.io](https://img.shields.io/crates/v/forgetless.svg)](https://crates.io/crates/forgetless)
+[![Documentation](https://docs.rs/forgetless/badge.svg)](https://docs.rs/forgetless)
+[![CI Status](https://github.com/pzzaworks/forgetless/workflows/CI/badge.svg)](https://github.com/pzzaworks/forgetless/actions)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 High-performance Rust library for intelligent context window management in Large Language Models. Maximize the value of every token through smart prioritization, semantic chunking, and conversation memory.
 
@@ -178,4 +170,4 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Contact
 
-Project Link: [https://github.com/forgetless/forgetless](https://github.com/forgetless/forgetless)
+Project Link: [https://github.com/pzzaworks/forgetless](https://github.com/pzzaworks/forgetless)
