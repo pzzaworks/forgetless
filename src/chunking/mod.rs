@@ -361,7 +361,7 @@ mod tests {
 
     #[test]
     fn test_chunk_calculate_tokens() {
-        let counter = TokenCounter::new(TokenizerModel::Gpt4).unwrap();
+        let counter = TokenCounter::new(TokenizerModel::Gpt4o).unwrap();
         let mut chunk = Chunk::new("Hello, world!", ContentType::Text);
 
         assert_eq!(chunk.tokens, 0);
@@ -416,7 +416,7 @@ mod tests {
     // Chunker tests
     #[test]
     fn test_text_chunking() {
-        let counter = TokenCounter::new(TokenizerModel::Gpt4).unwrap();
+        let counter = TokenCounter::new(TokenizerModel::Gpt4o).unwrap();
         let chunker = Chunker::new(ChunkConfig::default(), counter);
 
         let text = "First paragraph.\n\nSecond paragraph.\n\nThird paragraph.";
@@ -431,7 +431,7 @@ mod tests {
 
     #[test]
     fn test_text_chunking_long() {
-        let counter = TokenCounter::new(TokenizerModel::Gpt4).unwrap();
+        let counter = TokenCounter::new(TokenizerModel::Gpt4o).unwrap();
         let config = ChunkConfig {
             max_tokens: 20,
             target_tokens: 10,
@@ -452,7 +452,7 @@ mod tests {
 
     #[test]
     fn test_code_chunking() {
-        let counter = TokenCounter::new(TokenizerModel::Gpt4).unwrap();
+        let counter = TokenCounter::new(TokenizerModel::Gpt4o).unwrap();
         let config = ChunkConfig::for_code();
         let chunker = Chunker::new(config, counter);
 
@@ -477,7 +477,7 @@ pub fn public_fn() {
 
     #[test]
     fn test_conversation_chunking() {
-        let counter = TokenCounter::new(TokenizerModel::Gpt4).unwrap();
+        let counter = TokenCounter::new(TokenizerModel::Gpt4o).unwrap();
         let config = ChunkConfig::for_conversation();
         let chunker = Chunker::new(config, counter);
 
@@ -492,7 +492,7 @@ pub fn public_fn() {
 
     #[test]
     fn test_structured_chunking_small() {
-        let counter = TokenCounter::new(TokenizerModel::Gpt4).unwrap();
+        let counter = TokenCounter::new(TokenizerModel::Gpt4o).unwrap();
         let config = ChunkConfig {
             max_tokens: 1000,
             content_type: ContentType::Structured,
@@ -510,7 +510,7 @@ pub fn public_fn() {
 
     #[test]
     fn test_structured_chunking_large() {
-        let counter = TokenCounter::new(TokenizerModel::Gpt4).unwrap();
+        let counter = TokenCounter::new(TokenizerModel::Gpt4o).unwrap();
         let config = ChunkConfig {
             max_tokens: 10,
             content_type: ContentType::Structured,
@@ -527,7 +527,7 @@ pub fn public_fn() {
 
     #[test]
     fn test_markdown_chunking() {
-        let counter = TokenCounter::new(TokenizerModel::Gpt4).unwrap();
+        let counter = TokenCounter::new(TokenizerModel::Gpt4o).unwrap();
         let config = ChunkConfig {
             content_type: ContentType::Markdown,
             ..Default::default()
@@ -542,7 +542,7 @@ pub fn public_fn() {
 
     #[test]
     fn test_empty_text_chunking() {
-        let counter = TokenCounter::new(TokenizerModel::Gpt4).unwrap();
+        let counter = TokenCounter::new(TokenizerModel::Gpt4o).unwrap();
         let chunker = Chunker::new(ChunkConfig::default(), counter);
 
         let chunks = chunker.chunk("");
@@ -551,7 +551,7 @@ pub fn public_fn() {
 
     #[test]
     fn test_whitespace_only_chunking() {
-        let counter = TokenCounter::new(TokenizerModel::Gpt4).unwrap();
+        let counter = TokenCounter::new(TokenizerModel::Gpt4o).unwrap();
         let chunker = Chunker::new(ChunkConfig::default(), counter);
 
         let chunks = chunker.chunk("   \n\n   ");
@@ -560,7 +560,7 @@ pub fn public_fn() {
 
     #[test]
     fn test_chunk_positions_are_set() {
-        let counter = TokenCounter::new(TokenizerModel::Gpt4).unwrap();
+        let counter = TokenCounter::new(TokenizerModel::Gpt4o).unwrap();
         let chunker = Chunker::new(ChunkConfig::default(), counter);
 
         let text = "First paragraph.\n\nSecond paragraph.";
@@ -573,7 +573,7 @@ pub fn public_fn() {
 
     #[test]
     fn test_code_chunking_with_empty_lines() {
-        let counter = TokenCounter::new(TokenizerModel::Gpt4).unwrap();
+        let counter = TokenCounter::new(TokenizerModel::Gpt4o).unwrap();
         let config = ChunkConfig {
             max_tokens: 50,
             target_tokens: 25,
@@ -590,7 +590,7 @@ pub fn public_fn() {
 
     #[test]
     fn test_code_chunking_exceeds_max_tokens() {
-        let counter = TokenCounter::new(TokenizerModel::Gpt4).unwrap();
+        let counter = TokenCounter::new(TokenizerModel::Gpt4o).unwrap();
         let config = ChunkConfig {
             max_tokens: 5,  // Very small to force splits
             target_tokens: 3,
@@ -613,7 +613,7 @@ pub fn public_fn() {
 
     #[test]
     fn test_text_chunking_with_overlap() {
-        let counter = TokenCounter::new(TokenizerModel::Gpt4).unwrap();
+        let counter = TokenCounter::new(TokenizerModel::Gpt4o).unwrap();
         let config = ChunkConfig {
             max_tokens: 15,
             target_tokens: 10,
@@ -632,7 +632,7 @@ pub fn public_fn() {
 
     #[test]
     fn test_text_chunking_no_overlap() {
-        let counter = TokenCounter::new(TokenizerModel::Gpt4).unwrap();
+        let counter = TokenCounter::new(TokenizerModel::Gpt4o).unwrap();
         let config = ChunkConfig {
             max_tokens: 15,
             target_tokens: 10,

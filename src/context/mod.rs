@@ -94,14 +94,14 @@ pub struct ContextConfig {
 impl Default for ContextConfig {
     fn default() -> Self {
         Self {
-            max_tokens: 8000,
-            reserved_for_response: 1000,
-            model: "gpt-4".to_string(),
-            tokenizer: TokenizerModel::Gpt4,
+            max_tokens: 200_000, // Claude Sonnet 4.5 supports 200k context
+            reserved_for_response: 8192,
+            model: "claude-sonnet-4.5".to_string(),
+            tokenizer: TokenizerModel::ClaudeSonnet45,
             memory_config: MemoryConfig::default(),
             chunk_config: ChunkConfig::default(),
             include_long_term: true,
-            max_long_term_items: 5,
+            max_long_term_items: 10,
         }
     }
 }
@@ -117,10 +117,36 @@ impl ContextConfig {
     pub fn with_model(mut self, model: impl Into<String>) -> Self {
         let model = model.into();
         self.tokenizer = match model.as_str() {
-            "gpt-4" | "gpt-4-turbo" | "gpt-4o" => TokenizerModel::Gpt4,
-            "gpt-3.5-turbo" => TokenizerModel::Gpt35Turbo,
-            "claude-3" | "claude-3.5" | "claude-3-opus" | "claude-3-sonnet" => TokenizerModel::Claude,
-            _ => TokenizerModel::Gpt4, // Default
+            // OpenAI GPT-5.3 Codex (latest)
+            "gpt-5.3-codex" | "gpt-5.3" | "openai/gpt-5.3-codex" => TokenizerModel::Gpt53Codex,
+            // OpenAI GPT-5.2
+            "gpt-5.2" | "openai/gpt-5.2" => TokenizerModel::Gpt52,
+            // OpenAI GPT-4o series
+            "gpt-4o" | "gpt-4o-mini" | "openai/gpt-4o" => TokenizerModel::Gpt4o,
+            // OpenAI gpt-oss-120b (open weight)
+            "gpt-oss-120b" | "openai/gpt-oss-120b" => TokenizerModel::GptOss120b,
+            // Anthropic Claude Opus 4.6 (latest)
+            "claude-opus-4.6" | "claude-4.6" | "anthropic/claude-opus-4.6" => TokenizerModel::ClaudeOpus46,
+            // Anthropic Claude Sonnet 4.5
+            "claude-sonnet-4.5" | "claude-4.5" | "anthropic/claude-sonnet-4.5" => TokenizerModel::ClaudeSonnet45,
+            // Anthropic Claude Haiku 4.5
+            "claude-haiku-4.5" | "anthropic/claude-haiku-4.5" => TokenizerModel::ClaudeHaiku45,
+            // Google Gemini 3
+            "gemini-3" | "gemini-3-pro" | "gemini-3-flash" | "google/gemini-3-pro-preview" => TokenizerModel::Gemini3,
+            // Google Gemini 2.5
+            "gemini-2.5" | "gemini-2.5-flash-lite" | "google/gemini-2.5-flash-lite" => TokenizerModel::Gemini25,
+            // xAI Grok 4.1
+            "grok-4.1" | "grok-4.1-fast" | "x-ai/grok-4.1-fast" => TokenizerModel::Grok41,
+            // DeepSeek V3.2
+            "deepseek-v3.2" | "deepseek/deepseek-v3.2" => TokenizerModel::DeepSeekV32,
+            // Qwen3 Coder
+            "qwen3-coder" | "qwen/qwen3-coder-480b" => TokenizerModel::Qwen3Coder,
+            // Meta Llama 4
+            "llama-4" | "llama-4-405b" | "llama-4-70b" | "meta-llama/llama-4-405b" => TokenizerModel::Llama4,
+            // Mistral
+            "mistral-large" | "mistral-large-2" | "mistral/mistral-large-2" => TokenizerModel::MistralLarge,
+            // Default to Claude Sonnet 4.5
+            _ => TokenizerModel::ClaudeSonnet45,
         };
         self.model = model;
         self
@@ -457,19 +483,19 @@ mod tests {
     #[test]
     fn test_context_config_default() {
         let config = ContextConfig::default();
-        assert_eq!(config.max_tokens, 8000);
-        assert_eq!(config.reserved_for_response, 1000);
-        assert_eq!(config.model, "gpt-4");
+        assert_eq!(config.max_tokens, 200_000);
+        assert_eq!(config.reserved_for_response, 8192);
+        assert_eq!(config.model, "claude-sonnet-4.5");
     }
 
     #[test]
     fn test_context_config() {
         let config = ContextConfig::default()
             .with_max_tokens(16000)
-            .with_model("gpt-4");
+            .with_model("claude-opus-4.6");
 
         assert_eq!(config.max_tokens, 16000);
-        assert_eq!(config.model, "gpt-4");
+        assert_eq!(config.model, "claude-opus-4.6");
     }
 
     #[test]
@@ -488,23 +514,32 @@ mod tests {
 
     #[test]
     fn test_context_config_model_tokenizer_mapping() {
-        let gpt4 = ContextConfig::default().with_model("gpt-4");
-        assert_eq!(gpt4.tokenizer, TokenizerModel::Gpt4);
+        let gpt53 = ContextConfig::default().with_model("gpt-5.3-codex");
+        assert_eq!(gpt53.tokenizer, TokenizerModel::Gpt53Codex);
 
-        let gpt4_turbo = ContextConfig::default().with_model("gpt-4-turbo");
-        assert_eq!(gpt4_turbo.tokenizer, TokenizerModel::Gpt4);
+        let gpt4o = ContextConfig::default().with_model("gpt-4o");
+        assert_eq!(gpt4o.tokenizer, TokenizerModel::Gpt4o);
 
-        let gpt35 = ContextConfig::default().with_model("gpt-3.5-turbo");
-        assert_eq!(gpt35.tokenizer, TokenizerModel::Gpt35Turbo);
+        let claude_opus = ContextConfig::default().with_model("claude-opus-4.6");
+        assert_eq!(claude_opus.tokenizer, TokenizerModel::ClaudeOpus46);
 
-        let claude = ContextConfig::default().with_model("claude-3");
-        assert_eq!(claude.tokenizer, TokenizerModel::Claude);
+        let claude_sonnet = ContextConfig::default().with_model("claude-sonnet-4.5");
+        assert_eq!(claude_sonnet.tokenizer, TokenizerModel::ClaudeSonnet45);
 
-        let claude_opus = ContextConfig::default().with_model("claude-3-opus");
-        assert_eq!(claude_opus.tokenizer, TokenizerModel::Claude);
+        let gemini = ContextConfig::default().with_model("gemini-3-pro");
+        assert_eq!(gemini.tokenizer, TokenizerModel::Gemini3);
+
+        let deepseek = ContextConfig::default().with_model("deepseek-v3.2");
+        assert_eq!(deepseek.tokenizer, TokenizerModel::DeepSeekV32);
+
+        let grok = ContextConfig::default().with_model("grok-4.1-fast");
+        assert_eq!(grok.tokenizer, TokenizerModel::Grok41);
+
+        let llama = ContextConfig::default().with_model("llama-4-405b");
+        assert_eq!(llama.tokenizer, TokenizerModel::Llama4);
 
         let unknown = ContextConfig::default().with_model("unknown-model");
-        assert_eq!(unknown.tokenizer, TokenizerModel::Gpt4); // Default
+        assert_eq!(unknown.tokenizer, TokenizerModel::ClaudeSonnet45); // Default
     }
 
     // BuiltContext tests
@@ -567,7 +602,9 @@ mod tests {
     // ContextManager tests
     #[test]
     fn test_context_manager() {
-        let config = ContextConfig::default().with_max_tokens(8000);
+        let config = ContextConfig::default()
+            .with_max_tokens(8000)
+            .with_reserved_tokens(1000);
         let mut manager = ContextManager::new(config).unwrap();
 
         manager.set_system("You are a helpful assistant.");
@@ -583,7 +620,9 @@ mod tests {
 
     #[test]
     fn test_context_manager_add_item() {
-        let config = ContextConfig::default().with_max_tokens(8000);
+        let config = ContextConfig::default()
+            .with_max_tokens(8000)
+            .with_reserved_tokens(1000);
         let mut manager = ContextManager::new(config).unwrap();
 
         let item = ContextItem::new("id1", "content")
@@ -598,7 +637,9 @@ mod tests {
 
     #[test]
     fn test_context_manager_remove_item() {
-        let config = ContextConfig::default().with_max_tokens(8000);
+        let config = ContextConfig::default()
+            .with_max_tokens(8000)
+            .with_reserved_tokens(1000);
         let mut manager = ContextManager::new(config).unwrap();
 
         manager.add("id1", "content", Priority::High);
@@ -611,7 +652,9 @@ mod tests {
 
     #[test]
     fn test_context_manager_pin_unpin() {
-        let config = ContextConfig::default().with_max_tokens(8000);
+        let config = ContextConfig::default()
+            .with_max_tokens(8000)
+            .with_reserved_tokens(1000);
         let mut manager = ContextManager::new(config).unwrap();
 
         manager.add("id1", "content", Priority::Low);
@@ -625,7 +668,9 @@ mod tests {
 
     #[test]
     fn test_context_manager_add_document() {
-        let config = ContextConfig::default().with_max_tokens(8000);
+        let config = ContextConfig::default()
+            .with_max_tokens(8000)
+            .with_reserved_tokens(1000);
         let mut manager = ContextManager::new(config).unwrap();
 
         let long_doc = "Paragraph one.\n\nParagraph two.\n\nParagraph three.";
@@ -637,7 +682,9 @@ mod tests {
 
     #[test]
     fn test_context_manager_token_usage() {
-        let config = ContextConfig::default().with_max_tokens(8000);
+        let config = ContextConfig::default()
+            .with_max_tokens(8000)
+            .with_reserved_tokens(1000);
         let mut manager = ContextManager::new(config).unwrap();
 
         let initial = manager.token_usage();
@@ -664,7 +711,9 @@ mod tests {
 
     #[test]
     fn test_context_manager_clear() {
-        let config = ContextConfig::default().with_max_tokens(8000);
+        let config = ContextConfig::default()
+            .with_max_tokens(8000)
+            .with_reserved_tokens(1000);
         let mut manager = ContextManager::new(config).unwrap();
 
         manager.add_user("Hello").unwrap();
@@ -753,7 +802,9 @@ mod tests {
 
     #[test]
     fn test_built_context_with_system() {
-        let config = ContextConfig::default().with_max_tokens(8000);
+        let config = ContextConfig::default()
+            .with_max_tokens(8000)
+            .with_reserved_tokens(1000);
         let mut manager = ContextManager::new(config).unwrap();
 
         manager.set_system("You are helpful.");
@@ -767,7 +818,9 @@ mod tests {
 
     #[test]
     fn test_built_context_messages_exclude_system() {
-        let config = ContextConfig::default().with_max_tokens(8000);
+        let config = ContextConfig::default()
+            .with_max_tokens(8000)
+            .with_reserved_tokens(1000);
         let mut manager = ContextManager::new(config).unwrap();
 
         manager.set_system("System");

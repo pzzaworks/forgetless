@@ -7,16 +7,18 @@ Smart context management for LLMs - never forget what matters.
 [![CI Status](https://github.com/pzzaworks/forgetless/workflows/CI/badge.svg)](https://github.com/pzzaworks/forgetless/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
-High-performance Rust library for intelligent context window management in Large Language Models. Maximize the value of every token through smart prioritization, semantic chunking, and conversation memory.
+High-performance Rust library for intelligent context window management in Large Language Models. Maximize the value of every token through smart prioritization, semantic chunking, embedding-based retrieval, and cognitive-inspired agent memory.
 
 ## Features
 
 - **Smart Chunking** - Semantic-aware text and code chunking that respects natural boundaries
 - **Priority-based Retention** - Keep important information, compress or drop the rest
-- **Token Budget Management** - Precise token counting compatible with OpenAI and Anthropic models
+- **Token Budget Management** - Precise token counting for all major LLM providers
+- **Embedding Support** - Semantic similarity scoring with cosine similarity
+- **Agent Memory** - Cognitive-inspired memory architecture (Working/Episodic/Semantic)
+- **Multi-modal** - Image token counting for vision models
 - **Relevance Scoring** - Score and rank context items by recency, semantic relevance, and priority
 - **Conversation Memory** - Long-term memory with automatic compression for multi-turn conversations
-- **Zero-copy Design** - Efficient memory usage for high-throughput applications
 
 ## Installation
 
@@ -35,8 +37,8 @@ use forgetless::{ContextManager, ContextConfig, Priority};
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     // Create a context manager
     let config = ContextConfig::default()
-        .with_max_tokens(8000)
-        .with_model("gpt-4");
+        .with_max_tokens(200_000)
+        .with_model("claude-sonnet-4.5");
 
     let mut manager = ContextManager::new(config)?;
 
@@ -72,27 +74,99 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 | `Low` | 25 | Nice-to-have context |
 | `Minimal` | 10 | Can be dropped first |
 
-## Supported Models
+## Supported Models (February 2026)
 
-| Model | Tokenizer |
-|-------|-----------|
-| GPT-4 / GPT-4 Turbo / GPT-4o | `cl100k_base` |
-| GPT-3.5 Turbo | `cl100k_base` |
-| Claude 3 / Claude 3.5 | Approximate (`cl100k_base`) |
-| Custom | Configurable chars-per-token ratio |
+| Provider | Models | Context |
+|----------|--------|---------|
+| **OpenAI** | GPT-5.3 Codex, GPT-5.2, GPT-4o, gpt-oss-120b | Up to 400K |
+| **Anthropic** | Claude Opus 4.6, Sonnet 4.5, Haiku 4.5 | Up to 200K |
+| **Google** | Gemini 3 Pro/Flash, Gemini 2.5 | Up to 1M |
+| **xAI** | Grok 4.1 Fast | 128K |
+| **DeepSeek** | DeepSeek V3.2 | 256K |
+| **Alibaba** | Qwen3-Coder-480B | 128K |
+| **Meta** | Llama 4 | 128K |
+| **Mistral** | Mistral Large 2 | 128K |
+| **Custom** | Configurable chars-per-token ratio | Any |
 
 ## Architecture
 
 ```
 forgetless/
 ├── context/    # Main context manager - orchestrates everything
-├── memory/     # Conversation memory & long-term storage
+├── memory/     # Conversation memory and long-term storage
+├── agent/      # Agent memory patterns (Working/Episodic/Semantic)
+├── embedding/  # Semantic similarity and embedding support
 ├── chunking/   # Semantic text and code chunking
 ├── scoring/    # Priority and relevance scoring
-└── token/      # Token counting (tiktoken-compatible)
+└── token/      # Token counting with multi-modal support
 ```
 
 ## Advanced Usage
+
+### Agent Memory
+
+```rust
+use forgetless::{AgentMemory, AgentMemoryConfig, MemoryEntry, MemoryType, Priority};
+
+let config = AgentMemoryConfig {
+    working_memory_tokens: 8000,
+    working_memory_size: 20,
+    episodic_memory_size: 1000,
+    semantic_memory_size: 500,
+    consolidation_threshold: 0.5,
+    auto_consolidate: true,
+};
+
+let mut memory = AgentMemory::new(config, token_counter);
+
+// Add to working memory (current task context)
+memory.add_working(MemoryEntry::new("task1", "Current task details", MemoryType::Working));
+
+// Add to semantic memory (long-term knowledge)
+memory.add_semantic(
+    MemoryEntry::new("fact1", "The sky is blue", MemoryType::Semantic)
+        .with_priority(Priority::High)
+);
+
+// Search across memory types
+let results = memory.search("sky", &[MemoryType::Working, MemoryType::Semantic]);
+```
+
+### Embedding-based Retrieval
+
+```rust
+use forgetless::{SemanticScorer, EmbeddedItem, EmbeddingModel};
+
+// Create scorer with query embedding
+let scorer = SemanticScorer::new()
+    .with_query(query_embedding)
+    .with_threshold(0.7);
+
+// Score and rank items
+let ranked = scorer.rank_by_similarity(&embedded_items);
+
+// Filter by threshold
+let relevant = scorer.filter_and_rank(&embedded_items);
+```
+
+### Multi-modal Token Counting
+
+```rust
+use forgetless::{TokenCounter, TokenizerModel, ImageDimensions, ImageDetail};
+
+let counter = TokenCounter::new(TokenizerModel::Gpt4o)?;
+
+// Count image tokens
+let dims = ImageDimensions { width: 1024, height: 768 };
+let image_tokens = counter.count_image(dims, ImageDetail::High);
+
+// Count multiple images
+let images = vec![
+    (ImageDimensions { width: 512, height: 512 }, ImageDetail::Low),
+    (ImageDimensions { width: 2048, height: 1536 }, ImageDetail::High),
+];
+let total = counter.count_images(&images);
+```
 
 ### Document Chunking
 
@@ -145,14 +219,15 @@ let messages = memory.get_messages_within_budget(4000);
 - **RAG Systems** - Optimize retrieved context for maximum relevance
 - **Code Assistants** - Smart code context with syntax-aware chunking
 - **Document Q&A** - Efficient document chunking and prioritization
-- **Agent Systems** - Memory management for autonomous agents
+- **Agent Systems** - Cognitive-inspired memory for autonomous agents
+- **Multi-modal Apps** - Vision model token optimization
 
 ## Performance
 
 - Sub-microsecond token counting for cached content
 - Zero-copy chunking where possible
 - Efficient priority queue for context selection
-- ~99% test coverage
+- 144 tests with ~99% coverage
 
 ## Contributing
 

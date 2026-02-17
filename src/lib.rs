@@ -12,6 +12,9 @@
 //! - **Token Budget**: Precise token counting and budget management
 //! - **Relevance Scoring**: Score and rank context by relevance
 //! - **Conversation Memory**: Long-term memory for multi-turn conversations
+//! - **Embedding Support**: Semantic similarity with embedding vectors
+//! - **Agent Memory**: Cognitive-inspired memory architecture (Working/Episodic/Semantic)
+//! - **Multi-modal**: Image token counting for vision models
 //!
 //! ## Quick Start
 //!
@@ -19,8 +22,8 @@
 //! use forgetless::{ContextManager, ContextConfig};
 //!
 //! let config = ContextConfig::default()
-//!     .with_max_tokens(8000)
-//!     .with_model("gpt-4");
+//!     .with_max_tokens(128_000)
+//!     .with_model("gpt-4o");
 //!
 //! let mut manager = ContextManager::new(config);
 //!
@@ -35,19 +38,23 @@
 #![warn(missing_docs)]
 #![warn(clippy::all)]
 
+pub mod agent;
 pub mod chunking;
 pub mod context;
+pub mod embedding;
 pub mod error;
 pub mod memory;
 pub mod scoring;
 pub mod token;
 
+pub use agent::{AgentMemory, AgentMemoryConfig, MemoryEntry, MemoryType};
 pub use chunking::Chunk;
 pub use context::{ContextConfig, ContextManager};
+pub use embedding::{EmbeddedItem, Embedding, EmbeddingModel, SemanticScorer};
 pub use error::{Error, Result};
 pub use memory::{ConversationMemory, Message, Role};
 pub use scoring::Priority;
-pub use token::TokenCounter;
+pub use token::{ImageDetail, ImageDimensions, TokenCounter, TokenizerModel};
 
 /// Library version
 pub const VERSION: &str = env!("CARGO_PKG_VERSION");

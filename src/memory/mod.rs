@@ -345,7 +345,7 @@ mod tests {
 
     #[test]
     fn test_message_calculate_tokens() {
-        let counter = TokenCounter::new(TokenizerModel::Gpt4).unwrap();
+        let counter = TokenCounter::new(TokenizerModel::Gpt4o).unwrap();
         let mut msg = Message::new(Role::User, "Hello, world!");
         assert_eq!(msg.tokens, 0);
         msg.calculate_tokens(&counter);
@@ -371,7 +371,7 @@ mod tests {
     // ConversationMemory tests
     #[test]
     fn test_conversation_memory() {
-        let counter = TokenCounter::new(TokenizerModel::Gpt4).unwrap();
+        let counter = TokenCounter::new(TokenizerModel::Gpt4o).unwrap();
         let mut memory = ConversationMemory::new(MemoryConfig::default(), counter);
 
         memory.set_system_prompt("You are a helpful assistant.");
@@ -384,7 +384,7 @@ mod tests {
 
     #[test]
     fn test_conversation_memory_get_messages() {
-        let counter = TokenCounter::new(TokenizerModel::Gpt4).unwrap();
+        let counter = TokenCounter::new(TokenizerModel::Gpt4o).unwrap();
         let mut memory = ConversationMemory::new(MemoryConfig::default(), counter);
 
         memory.set_system_prompt("System prompt");
@@ -398,7 +398,7 @@ mod tests {
 
     #[test]
     fn test_budget_retrieval() {
-        let counter = TokenCounter::new(TokenizerModel::Gpt4).unwrap();
+        let counter = TokenCounter::new(TokenizerModel::Gpt4o).unwrap();
         let mut memory = ConversationMemory::new(MemoryConfig::default(), counter);
 
         memory.add_user("Message 1").unwrap();
@@ -411,7 +411,7 @@ mod tests {
 
     #[test]
     fn test_budget_retrieval_with_system() {
-        let counter = TokenCounter::new(TokenizerModel::Gpt4).unwrap();
+        let counter = TokenCounter::new(TokenizerModel::Gpt4o).unwrap();
         let mut memory = ConversationMemory::new(MemoryConfig::default(), counter);
 
         memory.set_system_prompt("Short system");
@@ -423,7 +423,7 @@ mod tests {
 
     #[test]
     fn test_budget_retrieval_excludes_when_over_budget() {
-        let counter = TokenCounter::new(TokenizerModel::Gpt4).unwrap();
+        let counter = TokenCounter::new(TokenizerModel::Gpt4o).unwrap();
         let mut memory = ConversationMemory::new(MemoryConfig::default(), counter);
 
         // Add messages that exceed a small budget
@@ -437,7 +437,7 @@ mod tests {
 
     #[test]
     fn test_memory_clear() {
-        let counter = TokenCounter::new(TokenizerModel::Gpt4).unwrap();
+        let counter = TokenCounter::new(TokenizerModel::Gpt4o).unwrap();
         let mut memory = ConversationMemory::new(MemoryConfig::default(), counter);
 
         memory.add_user("Message").unwrap();
@@ -455,7 +455,7 @@ mod tests {
 
     #[test]
     fn test_memory_clear_with_system() {
-        let counter = TokenCounter::new(TokenizerModel::Gpt4).unwrap();
+        let counter = TokenCounter::new(TokenizerModel::Gpt4o).unwrap();
         let mut memory = ConversationMemory::new(MemoryConfig::default(), counter);
 
         memory.set_system_prompt("System");
@@ -473,7 +473,7 @@ mod tests {
 
     #[test]
     fn test_memory_compression_by_tokens() {
-        let counter = TokenCounter::new(TokenizerModel::Gpt4).unwrap();
+        let counter = TokenCounter::new(TokenizerModel::Gpt4o).unwrap();
         let config = MemoryConfig {
             max_tokens: 50, // Very small token limit
             max_messages: 100,
@@ -493,7 +493,7 @@ mod tests {
 
     #[test]
     fn test_memory_compression_by_count() {
-        let counter = TokenCounter::new(TokenizerModel::Gpt4).unwrap();
+        let counter = TokenCounter::new(TokenizerModel::Gpt4o).unwrap();
         let config = MemoryConfig {
             max_tokens: 10000,
             max_messages: 3, // Very small message limit
@@ -512,7 +512,7 @@ mod tests {
 
     #[test]
     fn test_long_term_memory() {
-        let counter = TokenCounter::new(TokenizerModel::Gpt4).unwrap();
+        let counter = TokenCounter::new(TokenizerModel::Gpt4o).unwrap();
         let config = MemoryConfig {
             max_tokens: 20,
             auto_summarize: true,
@@ -538,7 +538,7 @@ mod tests {
 
     #[test]
     fn test_search_long_term_empty() {
-        let counter = TokenCounter::new(TokenizerModel::Gpt4).unwrap();
+        let counter = TokenCounter::new(TokenizerModel::Gpt4o).unwrap();
         let memory = ConversationMemory::new(MemoryConfig::default(), counter);
 
         let results = memory.search_long_term("test");
@@ -547,7 +547,7 @@ mod tests {
 
     #[test]
     fn test_add_with_role() {
-        let counter = TokenCounter::new(TokenizerModel::Gpt4).unwrap();
+        let counter = TokenCounter::new(TokenizerModel::Gpt4o).unwrap();
         let mut memory = ConversationMemory::new(MemoryConfig::default(), counter);
 
         memory.add(Role::Tool, "Tool result").unwrap();
@@ -558,7 +558,7 @@ mod tests {
 
     #[test]
     fn test_recency_updates() {
-        let counter = TokenCounter::new(TokenizerModel::Gpt4).unwrap();
+        let counter = TokenCounter::new(TokenizerModel::Gpt4o).unwrap();
         let mut memory = ConversationMemory::new(MemoryConfig::default(), counter);
 
         memory.add_user("First").unwrap();
