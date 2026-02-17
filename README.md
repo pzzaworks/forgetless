@@ -4,7 +4,6 @@ Smart context management for LLMs - never forget what matters.
 
 [![Crates.io](https://img.shields.io/crates/v/forgetless.svg)](https://crates.io/crates/forgetless)
 [![Documentation](https://docs.rs/forgetless/badge.svg)](https://docs.rs/forgetless)
-[![CI Status](https://github.com/pzzaworks/forgetless/workflows/CI/badge.svg)](https://github.com/pzzaworks/forgetless/actions)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 
 High-performance Rust library for intelligent context window management in Large Language Models. Maximize the value of every token through smart prioritization, semantic chunking, embedding-based retrieval, and cognitive-inspired agent memory.
