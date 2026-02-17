@@ -1,0 +1,47 @@
+# Rust build artifacts
+/target/
+**/*.rs.bk
+Cargo.lock
+
+# IDE / editors
+.idea/
+.vscode/
+*.swp
+*.swo
+.DS_Store
+.claude
+.cursor
+
+# Environment variables
+.env
+.env.local
+.env.*
+
+# Security sensitive files
+*.key
+*.pem
+secrets/
+credentials/
+
+# Logs
+logs/
+*.log
+
+# Coverage
+coverage/
+*.profraw
+tarpaulin-report.html
+
+# OS generated files
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+Thumbs.db
+
+# Benchmark results
+criterion/
+
+# Documentation build
+/doc/

@@ -1,0 +1,54 @@
+[package]
+name = "forgetless"
+version = "0.1.0"
+edition = "2024"
+authors = ["Your Name <your.email@example.com>"]
+description = "A smart context management system for LLMs - never forget what matters"
+license = "MIT OR Apache-2.0"
+repository = "https://github.com/forgetless/forgetless"
+keywords = ["llm", "context", "memory", "ai", "token"]
+categories = ["text-processing", "data-structures"]
+readme = "README.md"
+
+[dependencies]
+# Serialization
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+
+# Async runtime
+tokio = { version = "1.0", features = ["full"], optional = true }
+
+# Error handling
+thiserror = "2.0"
+
+# Logging
+tracing = "0.1"
+
+# Token counting (tiktoken compatible)
+tiktoken-rs = "0.6"
+
+# Text processing
+unicode-segmentation = "1.12"
+
+# Hashing for deduplication
+xxhash-rust = { version = "0.8", features = ["xxh3"] }
+
+# Priority queue for relevance scoring
+priority-queue = "2.0"
+
+[dev-dependencies]
+tokio-test = "0.4"
+criterion = "0.5"
+
+[features]
+default = []
+async = ["tokio"]
+full = ["async"]
+
+[[bench]]
+name = "context_benchmark"
+harness = false
+
+[lib]
+name = "forgetless"
+path = "src/lib.rs"
