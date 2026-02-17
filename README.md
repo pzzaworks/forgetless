@@ -1,6 +1,6 @@
 # Forgetless
 
-Smart context management for LLMs — never forget what matters.
+Smart context management for LLMs - never forget what matters.
 
 [![Crates.io](https://img.shields.io/crates/v/forgetless.svg)](https://crates.io/crates/forgetless)
 [![Documentation](https://docs.rs/forgetless/badge.svg)](https://docs.rs/forgetless)
@@ -11,12 +11,12 @@ High-performance Rust library for intelligent context window management in Large
 
 ## Features
 
-- **Smart Chunking** — Semantic-aware text and code chunking that respects natural boundaries
-- **Priority-based Retention** — Keep important information, compress or drop the rest
-- **Token Budget Management** — Precise token counting compatible with OpenAI and Anthropic models
-- **Relevance Scoring** — Score and rank context items by recency, semantic relevance, and priority
-- **Conversation Memory** — Long-term memory with automatic compression for multi-turn conversations
-- **Zero-copy Design** — Efficient memory usage for high-throughput applications
+- **Smart Chunking** - Semantic-aware text and code chunking that respects natural boundaries
+- **Priority-based Retention** - Keep important information, compress or drop the rest
+- **Token Budget Management** - Precise token counting compatible with OpenAI and Anthropic models
+- **Relevance Scoring** - Score and rank context items by recency, semantic relevance, and priority
+- **Conversation Memory** - Long-term memory with automatic compression for multi-turn conversations
+- **Zero-copy Design** - Efficient memory usage for high-throughput applications
 
 ## Installation
 
@@ -85,7 +85,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
 
 ```
 forgetless/
-├── context/    # Main context manager — orchestrates everything
+├── context/    # Main context manager - orchestrates everything
 ├── memory/     # Conversation memory & long-term storage
 ├── chunking/   # Semantic text and code chunking
 ├── scoring/    # Priority and relevance scoring
@@ -141,11 +141,11 @@ let messages = memory.get_messages_within_budget(4000);
 
 ## Use Cases
 
-- **Chatbots** — Manage conversation history within token limits
-- **RAG Systems** — Optimize retrieved context for maximum relevance
-- **Code Assistants** — Smart code context with syntax-aware chunking
-- **Document Q&A** — Efficient document chunking and prioritization
-- **Agent Systems** — Memory management for autonomous agents
+- **Chatbots** - Manage conversation history within token limits
+- **RAG Systems** - Optimize retrieved context for maximum relevance
+- **Code Assistants** - Smart code context with syntax-aware chunking
+- **Document Q&A** - Efficient document chunking and prioritization
+- **Agent Systems** - Memory management for autonomous agents
 
 ## Performance
 
