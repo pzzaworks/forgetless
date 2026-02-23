@@ -2,12 +2,13 @@
 name = "forgetless"
 version = "0.1.0"
 edition = "2024"
-authors = ["Your Name <your.email@example.com>"]
-description = "A smart context management system for LLMs - never forget what matters"
+authors = ["Berke (pzzaworks)"]
+description = "Smart context optimization for LLMs that compresses massive content to fit your token budget"
 license = "MIT OR Apache-2.0"
-repository = "https://github.com/forgetless/forgetless"
+repository = "https://github.com/pzzaworks/forgetless"
+homepage = "https://forgetless.org"
 keywords = ["llm", "context", "memory", "ai", "token"]
-categories = ["text-processing", "data-structures"]
+categories = ["text-processing", "science", "algorithms"]
 readme = "README.md"
 
 [dependencies]
@@ -16,7 +17,7 @@ serde = { version = "1.0", features = ["derive"] }
 serde_json = "1.0"
 
 # Async runtime
-tokio = { version = "1.0", features = ["full"], optional = true }
+tokio = { version = "1.0", features = ["sync", "rt-multi-thread", "macros", "fs", "net"] }
 
 # Error handling
 thiserror = "2.0"
@@ -33,22 +34,67 @@ unicode-segmentation = "1.12"
 # Hashing for deduplication
 xxhash-rust = { version = "0.8", features = ["xxh3"] }
 
-# Priority queue for relevance scoring
-priority-queue = "2.0"
+# ML Embeddings
+fastembed = "4"
+
+# Parallel processing
+rayon = "1.10"
+
+# Caching
+lru = "0.12"
+
+# PDF parsing - removed pdf-extract (too slow, CPU killer)
+# Using fast raw text extraction instead
+
+# Image handling
+image = "0.25"
+base64 = "0.22"
+
+# Local LLM for intelligent scoring (mistral.rs)
+mistralrs = "0.7"
+
+# HTTP Server (optional)
+axum = { version = "0.8", features = ["multipart"], optional = true }
+tower-http = { version = "0.6", features = ["cors"], optional = true }
+tracing-subscriber = { version = "0.3", optional = true }
+uuid = { version = "1.0", features = ["v4"], optional = true }
 
 [dev-dependencies]
 tokio-test = "0.4"
-criterion = "0.5"
+criterion = { version = "0.5", features = ["async_tokio"] }
+ctor = "0.2"
+
+[[bench]]
+name = "core"
+harness = false
+
+[[bench]]
+name = "files"
+harness = false
+
+[[bench]]
+name = "vision"
+harness = false
 
 [features]
 default = []
-async = ["tokio"]
-full = ["async"]
 
-[[bench]]
-name = "context_benchmark"
-harness = false
+# GPU Acceleration
+cuda = ["mistralrs/cuda"]           # NVIDIA GPU (Linux/Windows) - requires CUDA toolkit
+metal = ["mistralrs/metal"]         # Apple Silicon GPU (macOS)
+
+# CPU Optimization
+mkl = ["mistralrs/mkl"]             # Intel MKL (Linux/Windows) - optimized for Intel CPUs
+accelerate = ["mistralrs/accelerate"] # Apple Accelerate (macOS) - optimized for Apple CPUs
+
+# Server mode
+server = ["axum", "tower-http", "tracing-subscriber", "uuid"]
 
 [lib]
 name = "forgetless"
 path = "src/lib.rs"
+
+[[bin]]
+name = "forgetless-server"
+path = "src/bin/server.rs"
+required-features = ["server"]

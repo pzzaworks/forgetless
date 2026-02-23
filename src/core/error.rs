@@ -40,6 +40,14 @@ pub enum Error {
     /// Context building error
     #[error("Context building error: {0}")]
     ContextBuildError(String),
+
+    /// Embedding error
+    #[error("Embedding error: {0}")]
+    Embedding(String),
+
+    /// Model error (SmolLM)
+    #[error("Model error: {0}")]
+    Model(String),
 }
 
 #[cfg(test)]
@@ -99,7 +107,7 @@ mod tests {
     #[test]
     fn test_error_debug() {
         let error = Error::InvalidConfig("test".to_string());
-        let debug = format!("{:?}", error);
+        let debug = format!("{error:?}");
         assert!(debug.contains("InvalidConfig"));
     }
 }

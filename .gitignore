@@ -43,5 +43,10 @@ Thumbs.db
 # Benchmark results
 criterion/
 
+# Benchmark data (user's own PDFs)
+benches/data/*.pdf
+benches/data/**/*.pdf
+!benches/data/.gitkeep
+
 # Documentation build
 /doc/

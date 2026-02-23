@@ -7,12 +7,14 @@ use std::cmp::Ordering;
 
 /// Priority level for context items
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[derive(Default)]
 pub enum Priority {
     /// Critical information that must always be included
     Critical,
     /// High priority - recent or highly relevant
     High,
     /// Medium priority - useful context
+    #[default]
     Medium,
     /// Low priority - background information
     Low,
@@ -38,11 +40,6 @@ impl Priority {
     }
 }
 
-impl Default for Priority {
-    fn default() -> Self {
-        Priority::Medium
-    }
-}
 
 impl Ord for Priority {
     fn cmp(&self, other: &Self) -> Ordering {
