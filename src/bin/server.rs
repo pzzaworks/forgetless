@@ -70,6 +70,38 @@ fn default_priority() -> String {
     "medium".to_string()
 }
 
+/// Sanitize filename to prevent path traversal and invalid characters
+fn sanitize_filename(name: &str) -> String {
+    // Remove path separators and null bytes
+    let name = name.replace(['/', '\\', '\0'], "_").replace("..", "_");
+
+    // Get only the filename part (in case of remaining path)
+    let name = std::path::Path::new(&name)
+        .file_name()
+        .and_then(|n| n.to_str())
+        .unwrap_or("unnamed");
+
+    // Keep only safe characters
+    let sanitized: String = name
+        .chars()
+        .filter(|c| c.is_alphanumeric() || *c == '.' || *c == '-' || *c == '_' || *c == ' ')
+        .collect();
+
+    // Limit length (200 chars, well under 255 filesystem limit)
+    let sanitized = if sanitized.len() > 200 {
+        sanitized[..200].to_string()
+    } else {
+        sanitized
+    };
+
+    // Ensure not empty or dangerous
+    if sanitized.is_empty() || sanitized == "." || sanitized == ".." {
+        "unnamed".to_string()
+    } else {
+        sanitized
+    }
+}
+
 /// Temporary file tracker for cleanup
 struct TempFiles {
     dir: PathBuf,
@@ -141,8 +173,9 @@ async fn optimize(mut multipart: Multipart) -> impl IntoResponse {
             let priority = name.split(':').nth(1).unwrap_or("medium").to_string();
 
             if let Some(fname) = filename {
+                let safe_fname = sanitize_filename(&fname);
                 if let Ok(data) = field.bytes().await {
-                    match temp_files.save(&fname, &data, &priority).await {
+                    match temp_files.save(&safe_fname, &data, &priority).await {
                         Ok(item) => file_items.push(item),
                         Err(e) => {
                             temp_files.cleanup().await;
