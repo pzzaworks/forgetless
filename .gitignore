@@ -43,10 +43,12 @@ Thumbs.db
 # Benchmark results
 criterion/
 
-# Benchmark data (user's own PDFs)
-benches/data/*.pdf
-benches/data/**/*.pdf
+# Benchmark data (test files)
+benches/data/
 !benches/data/.gitkeep
+
+# ML model cache
+.fastembed_cache/
 
 # Documentation build
 /doc/
