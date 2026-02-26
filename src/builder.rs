@@ -687,7 +687,6 @@ impl Forgetless {
                 truncated_chunk.chunk.content = truncated;
                 truncated_chunk.chunk.tokens = truncated_tokens;
 
-                used_tokens = truncated_tokens;
                 selected.push(truncated_chunk);
                 break;
             }
