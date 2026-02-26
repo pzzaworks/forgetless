@@ -8,7 +8,7 @@
 
 <p align="center">
   <a href="https://crates.io/crates/forgetless"><img src="https://img.shields.io/crates/v/forgetless.svg" alt="Crates.io" /></a>
-  <a href="https://docs.rs/forgetless"><img src="https://docs.rs/forgetless/badge.svg" alt="Documentation" /></a>
+  <a href="https://forgetless.org"><img src="https://img.shields.io/badge/docs-forgetless.org-blue" alt="Documentation" /></a>
   <a href="https://www.rust-lang.org/"><img src="https://img.shields.io/badge/Rust-000000?logo=rust&logoColor=white" alt="Rust" /></a>
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT" /></a>
 </p>
