@@ -7,15 +7,43 @@
 </p>
 
 <p align="center">
+  <a href="https://crates.io/crates/forgetless"><img src="https://img.shields.io/crates/v/forgetless.svg" alt="Crates.io" /></a>
+  <a href="https://docs.rs/forgetless"><img src="https://docs.rs/forgetless/badge.svg" alt="Documentation" /></a>
   <a href="https://www.rust-lang.org/"><img src="https://img.shields.io/badge/Rust-000000?logo=rust&logoColor=white" alt="Rust" /></a>
   <a href="https://opensource.org/licenses/MIT"><img src="https://img.shields.io/badge/License-MIT-yellow.svg" alt="License: MIT" /></a>
 </p>
 
 ## Installation
 
+```bash
+cargo add forgetless
+```
+
+Or add to your `Cargo.toml`:
+
 ```toml
 [dependencies]
-forgetless = { git = "https://github.com/pzzaworks/forgetless" }
+forgetless = "0.1"
+```
+
+### Optional Features
+
+```bash
+# With HTTP server
+cargo add forgetless --features server
+
+# With GPU acceleration (macOS)
+cargo add forgetless --features metal
+
+# With GPU acceleration (NVIDIA)
+cargo add forgetless --features cuda
+```
+
+### Server Binary
+
+```bash
+cargo install forgetless --features server
+forgetless-server  # Runs on http://localhost:8080
 ```
 
 ## Basic Usage
