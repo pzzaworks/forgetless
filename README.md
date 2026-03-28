@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/forgetless.png" alt="Forgetless" width="200" />
+  <img src="assets/forgetless.svg" alt="Forgetless" width="80" />
 </p>
 
 <p align="center">
