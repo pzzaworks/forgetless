@@ -6,8 +6,7 @@ use serde::{Deserialize, Serialize};
 use std::cmp::Ordering;
 
 /// Priority level for context items
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
-#[derive(Default)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize, Default)]
 pub enum Priority {
     /// Critical information that must always be included
     Critical,
@@ -39,7 +38,6 @@ impl Priority {
         self.score() >= other.score()
     }
 }
-
 
 impl Ord for Priority {
     fn cmp(&self, other: &Self) -> Ordering {

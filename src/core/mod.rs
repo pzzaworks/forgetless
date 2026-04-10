@@ -6,4 +6,6 @@ pub mod types;
 
 pub use config::{ForgetlessConfig, ScoringConfig};
 pub use error::{Error, Result};
-pub use types::{OptimizationStats, OptimizedContext, PolishedContext, ScoredChunk, ScoreBreakdown};
+pub use types::{
+    OptimizationStats, OptimizedContext, PolishedContext, ScoreBreakdown, ScoredChunk,
+};

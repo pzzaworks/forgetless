@@ -5,8 +5,8 @@
 #![cfg(feature = "server")]
 
 use std::process::{Child, Command, Stdio};
-use std::time::Duration;
 use std::thread;
+use std::time::Duration;
 
 struct ServerGuard {
     process: Child,
@@ -20,7 +20,14 @@ impl Drop for ServerGuard {
 
 fn start_server() -> Option<ServerGuard> {
     let child = Command::new("cargo")
-        .args(["run", "--features", "server", "--release", "--bin", "forgetless-server"])
+        .args([
+            "run",
+            "--features",
+            "server",
+            "--release",
+            "--bin",
+            "forgetless-server",
+        ])
         .stdout(Stdio::null())
         .stderr(Stdio::null())
         .spawn()

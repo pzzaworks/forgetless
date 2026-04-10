@@ -27,7 +27,10 @@ fn generate_conversation(messages: usize) -> String {
              The underlying mechanism relies on mathematical transformations. \
              Practical applications include NLP, computer vision, and multimodal systems. \
              Recent advances focus on scaling and efficiency.\n\n",
-            i + 1, topic, i + 1, topic
+            i + 1,
+            topic,
+            i + 1,
+            topic
         ));
     }
     conv

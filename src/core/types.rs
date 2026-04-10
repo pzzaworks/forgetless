@@ -204,15 +204,13 @@ mod tests {
 
     #[test]
     fn test_content_item_with_metadata() {
-        let item = ContentItem::new("content")
-            .with_metadata("key", "value");
+        let item = ContentItem::new("content").with_metadata("key", "value");
         assert_eq!(item.metadata.get("key"), Some(&"value".to_string()));
     }
 
     #[test]
     fn test_content_item_with_content_type() {
-        let item = ContentItem::new("fn main() {}")
-            .with_content_type(ContentType::Code);
+        let item = ContentItem::new("fn main() {}").with_content_type(ContentType::Code);
         assert_eq!(item.content_type, ContentType::Code);
     }
 

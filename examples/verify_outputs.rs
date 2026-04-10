@@ -22,7 +22,10 @@ async fn main() {
         .unwrap();
 
     println!("Query: 'What is Rust programming language?'");
-    println!("Input: {} tokens (mostly irrelevant)", result.stats.input_tokens);
+    println!(
+        "Input: {} tokens (mostly irrelevant)",
+        result.stats.input_tokens
+    );
     println!("Output: {} tokens", result.stats.output_tokens);
     println!("\nSelected content:");
     println!("---");
@@ -49,7 +52,10 @@ async fn main() {
     println!("Query: 'What is the attention mechanism?'");
     println!("Input: {} tokens", result.stats.input_tokens);
     println!("Output: {} tokens", result.stats.output_tokens);
-    println!("Chunks: {} -> {}", result.stats.chunks_processed, result.stats.chunks_selected);
+    println!(
+        "Chunks: {} -> {}",
+        result.stats.chunks_processed, result.stats.chunks_selected
+    );
     println!("\nExtracted content (first 500 chars):");
     println!("---");
     println!("{}", &result.content.chars().take(500).collect::<String>());
@@ -72,7 +78,10 @@ async fn main() {
         .unwrap();
 
     println!("Critical: 'SYSTEM: You are a helpful AI assistant...'");
-    println!("Low priority: {} tokens of filler", result.stats.input_tokens - 20);
+    println!(
+        "Low priority: {} tokens of filler",
+        result.stats.input_tokens - 20
+    );
     println!("Output: {} tokens", result.stats.output_tokens);
     println!("\nSelected content:");
     println!("---");
@@ -98,9 +107,15 @@ async fn main() {
     println!("Input: {} tokens", result.stats.input_tokens);
     println!("Output: {} tokens", result.stats.output_tokens);
     println!("Compression: {:.1}x", result.stats.compression_ratio);
-    println!("Chunks: {} -> {}", result.stats.chunks_processed, result.stats.chunks_selected);
+    println!(
+        "Chunks: {} -> {}",
+        result.stats.chunks_processed, result.stats.chunks_selected
+    );
     assert!(result.stats.compression_ratio > 1.0, "Should compress");
-    assert!(result.content.contains("machine learning") || result.content.contains("Machine"), "Content should be relevant");
+    assert!(
+        result.content.contains("machine learning") || result.content.contains("Machine"),
+        "Content should be relevant"
+    );
     println!("✓ Content is relevant and compressed");
     println!();
 

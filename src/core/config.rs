@@ -196,8 +196,7 @@ mod tests {
     #[test]
     fn test_config_builder() {
         let opts = Config::default().context_limit(64_000);
-        let config = ForgetlessConfig::new(opts)
-            .with_tokenizer(TokenizerModel::Default);
+        let config = ForgetlessConfig::new(opts).with_tokenizer(TokenizerModel::Default);
 
         assert_eq!(config.options.context_limit, 64_000);
     }
@@ -265,7 +264,8 @@ mod tests {
         let opts = Config::default().context_limit(4096);
         let config = ForgetlessConfig::new(opts);
         let json = serde_json::to_string(&config).expect("Should serialize");
-        let deserialized: ForgetlessConfig = serde_json::from_str(&json).expect("Should deserialize");
+        let deserialized: ForgetlessConfig =
+            serde_json::from_str(&json).expect("Should deserialize");
         assert_eq!(deserialized.options.context_limit, 4096);
     }
 }

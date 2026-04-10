@@ -65,7 +65,10 @@ fn bench_pdfs(c: &mut Criterion) {
 
     println!("\n");
     println!("╔══════════════════════════════════════════════════════════════════╗");
-    println!("║  Found {} PDF files for benchmarking                              ║", pdfs.len());
+    println!(
+        "║  Found {} PDF files for benchmarking                              ║",
+        pdfs.len()
+    );
     println!("╚══════════════════════════════════════════════════════════════════╝");
 
     let mut group = c.benchmark_group("pdfs");
@@ -94,7 +97,11 @@ fn bench_pdfs(c: &mut Criterion) {
     // Multiple PDFs
     if pdfs.len() >= 5 {
         group.bench_function("5_pdfs_to_64K", |b| {
-            let files: Vec<_> = pdfs.iter().take(5).map(|p| p.to_string_lossy().to_string()).collect();
+            let files: Vec<_> = pdfs
+                .iter()
+                .take(5)
+                .map(|p| p.to_string_lossy().to_string())
+                .collect();
 
             b.iter(|| {
                 rt.block_on(async {
@@ -116,7 +123,10 @@ fn bench_pdfs(c: &mut Criterion) {
     // All PDFs
     if pdfs.len() >= 10 {
         group.bench_function("all_to_128K", |b| {
-            let files: Vec<_> = pdfs.iter().map(|p| p.to_string_lossy().to_string()).collect();
+            let files: Vec<_> = pdfs
+                .iter()
+                .map(|p| p.to_string_lossy().to_string())
+                .collect();
 
             b.iter(|| {
                 rt.block_on(async {
@@ -152,15 +162,20 @@ fn bench_detailed(c: &mut Criterion) {
 
     println!("\n");
     println!("╔══════════════════════════════════════════════════════════════════╗");
-    println!("║  DETAILED BENCHMARK: {} PDFs                                      ║", pdfs.len());
+    println!(
+        "║  DETAILED BENCHMARK: {} PDFs                                      ║",
+        pdfs.len()
+    );
     println!("╚══════════════════════════════════════════════════════════════════╝");
 
     let start = Instant::now();
 
     let result = rt.block_on(async {
         let mut builder = Forgetless::new()
-            .config(Config::default().context_limit(8_000))  // Low limit to force compression
-            .add(WithPriority::critical("You are an expert research assistant."))
+            .config(Config::default().context_limit(8_000)) // Low limit to force compression
+            .add(WithPriority::critical(
+                "You are an expert research assistant.",
+            ))
             .query("Summarize and compare the key findings");
 
         for pdf in &pdfs {
@@ -173,21 +188,24 @@ fn bench_detailed(c: &mut Criterion) {
     let elapsed = start.elapsed();
 
     println!("\n  Results:");
-    println!("    Input:       {:>10} tokens ({:.2}M)",
+    println!(
+        "    Input:       {:>10} tokens ({:.2}M)",
         result.stats.input_tokens,
         result.stats.input_tokens as f64 / 1_000_000.0
     );
-    println!("    Output:      {:>10} tokens ({:.1}K)",
+    println!(
+        "    Output:      {:>10} tokens ({:.1}K)",
         result.stats.output_tokens,
         result.stats.output_tokens as f64 / 1_000.0
     );
     println!("    Compression: {:>10.1}x", result.stats.compression_ratio);
-    println!("    Chunks:      {:>10} -> {}",
-        result.stats.chunks_processed,
-        result.stats.chunks_selected
+    println!(
+        "    Chunks:      {:>10} -> {}",
+        result.stats.chunks_processed, result.stats.chunks_selected
     );
     println!("    Time:        {:>10.2}s", elapsed.as_secs_f64());
-    println!("    Throughput:  {:>10.0} tokens/sec",
+    println!(
+        "    Throughput:  {:>10.0} tokens/sec",
         result.stats.input_tokens as f64 / elapsed.as_secs_f64()
     );
     println!("\n");
@@ -213,7 +231,11 @@ fn bench_priorities(c: &mut Criterion) {
     group.sample_size(10);
 
     group.bench_function("mixed_priorities", |b| {
-        let files: Vec<_> = pdfs.iter().take(3).map(|p| p.to_string_lossy().to_string()).collect();
+        let files: Vec<_> = pdfs
+            .iter()
+            .take(3)
+            .map(|p| p.to_string_lossy().to_string())
+            .collect();
 
         b.iter(|| {
             rt.block_on(async {

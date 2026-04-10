@@ -39,7 +39,9 @@ impl<'a> Chunker<'a> {
 
     fn chunk_by_type(&self, text: &str, content_type: ContentType) -> Vec<Chunk> {
         match content_type {
-            ContentType::Text => self.chunk_text_sized(text, self.config.target_tokens, ContentType::Text),
+            ContentType::Text => {
+                self.chunk_text_sized(text, self.config.target_tokens, ContentType::Text)
+            }
             ContentType::Markdown => self.chunk_markdown(text),
             ContentType::Code => self.chunk_code(text),
             ContentType::Conversation => self.chunk_conversation(text),
@@ -141,27 +143,26 @@ impl<'a> Chunker<'a> {
             current.push('\n');
 
             // Natural break points at top level
-            let is_break = brace_depth == 0 && (
-                line.trim().is_empty() ||
-                line.starts_with("fn ") ||
-                line.starts_with("pub fn ") ||
-                line.starts_with("pub(") ||
-                line.starts_with("impl ") ||
-                line.starts_with("struct ") ||
-                line.starts_with("enum ") ||
-                line.starts_with("mod ") ||
-                line.starts_with("trait ") ||
-                line.starts_with("type ") ||
-                line.starts_with("const ") ||
-                line.starts_with("static ") ||
-                line.starts_with("use ") ||
-                line.starts_with("def ") ||
-                line.starts_with("class ") ||
-                line.starts_with("async def ") ||
-                line.starts_with("function ") ||
-                line.starts_with("export ") ||
-                line.starts_with("import ")
-            );
+            let is_break = brace_depth == 0
+                && (line.trim().is_empty()
+                    || line.starts_with("fn ")
+                    || line.starts_with("pub fn ")
+                    || line.starts_with("pub(")
+                    || line.starts_with("impl ")
+                    || line.starts_with("struct ")
+                    || line.starts_with("enum ")
+                    || line.starts_with("mod ")
+                    || line.starts_with("trait ")
+                    || line.starts_with("type ")
+                    || line.starts_with("const ")
+                    || line.starts_with("static ")
+                    || line.starts_with("use ")
+                    || line.starts_with("def ")
+                    || line.starts_with("class ")
+                    || line.starts_with("async def ")
+                    || line.starts_with("function ")
+                    || line.starts_with("export ")
+                    || line.starts_with("import "));
 
             let current_tokens = self.counter.count(&current);
 
@@ -228,7 +229,12 @@ impl<'a> Chunker<'a> {
     }
 
     /// Chunk plain text by paragraphs with configurable size
-    fn chunk_text_sized(&self, content: &str, target_tokens: usize, content_type: ContentType) -> Vec<Chunk> {
+    fn chunk_text_sized(
+        &self,
+        content: &str,
+        target_tokens: usize,
+        content_type: ContentType,
+    ) -> Vec<Chunk> {
         let mut chunks = Vec::new();
         let mut current = String::new();
         let mut position = 0;
@@ -312,7 +318,12 @@ mod tests {
     use super::*;
     use crate::processing::token::TokenizerModel;
 
-    fn make_chunker(target: usize, max: usize, min: usize, overlap: usize) -> (TokenCounter, ChunkConfig) {
+    fn make_chunker(
+        target: usize,
+        max: usize,
+        min: usize,
+        overlap: usize,
+    ) -> (TokenCounter, ChunkConfig) {
         let counter = TokenCounter::new(TokenizerModel::Default).unwrap();
         let config = ChunkConfig {
             target_tokens: target,
@@ -344,7 +355,8 @@ mod tests {
         let (counter, config) = make_chunker(20, 40, 5, 10);
         let chunker = Chunker::new(config, &counter);
 
-        let text = "Sentence one. Sentence two. Sentence three.\n\nParagraph two here. More content.";
+        let text =
+            "Sentence one. Sentence two. Sentence three.\n\nParagraph two here. More content.";
         let chunks = chunker.chunk(text);
         assert!(!chunks.is_empty());
     }
@@ -369,9 +381,17 @@ mod tests {
         let text = (0..20).map(|i| format!("This is paragraph number {} which contains enough text to be meaningful. Here is more content to increase the token count.", i)).collect::<Vec<_>>().join("\n\n");
         let chunks = chunker.chunk(&text);
 
-        assert!(chunks.len() > 1, "Expected multiple chunks, got {}", chunks.len());
+        assert!(
+            chunks.len() > 1,
+            "Expected multiple chunks, got {}",
+            chunks.len()
+        );
         for chunk in &chunks {
-            assert!(chunk.tokens <= 100, "Chunk exceeded max_tokens: {}", chunk.tokens);
+            assert!(
+                chunk.tokens <= 100,
+                "Chunk exceeded max_tokens: {}",
+                chunk.tokens
+            );
         }
     }
 
@@ -400,7 +420,8 @@ mod tests {
         let (counter, config) = make_chunker(30, 60, 5, 0);
         let chunker = Chunker::new(config.with_content_type(ContentType::Markdown), &counter);
 
-        let markdown = "# Header 1\nContent under header one.\n\n# Header 2\nContent under header two.";
+        let markdown =
+            "# Header 1\nContent under header one.\n\n# Header 2\nContent under header two.";
         let chunks = chunker.chunk(markdown);
 
         assert!(!chunks.is_empty());
@@ -433,7 +454,10 @@ fn two() {
     #[test]
     fn test_conversation_chunking() {
         let (counter, config) = make_chunker(100, 200, 1, 0); // min_tokens=1 to include all
-        let chunker = Chunker::new(config.with_content_type(ContentType::Conversation), &counter);
+        let chunker = Chunker::new(
+            config.with_content_type(ContentType::Conversation),
+            &counter,
+        );
 
         let conv = "User: Hello there friend\n---\nAssistant: Hi there how are you doing today!\n---\nUser: I am doing great thanks for asking!";
         let chunks = chunker.chunk(conv);
@@ -462,17 +486,27 @@ fn two() {
         let chunker = Chunker::new(config.with_content_type(ContentType::Structured), &counter);
 
         // Create large structured content that exceeds max_tokens (40)
-        let large = (0..100).map(|i| format!("\"key{i}\": \"this is a longer value for item number {i}\"")).collect::<Vec<_>>().join(",\n\n");
+        let large = (0..100)
+            .map(|i| format!("\"key{i}\": \"this is a longer value for item number {i}\""))
+            .collect::<Vec<_>>()
+            .join(",\n\n");
         let json = format!("{{\n\n{large}\n\n}}");
         let chunks = chunker.chunk(&json);
 
-        assert!(chunks.len() > 1, "Expected multiple chunks for large JSON, got {}", chunks.len());
+        assert!(
+            chunks.len() > 1,
+            "Expected multiple chunks for large JSON, got {}",
+            chunks.len()
+        );
     }
 
     #[test]
     fn test_deduplication() {
         let (counter, config) = make_chunker(100, 200, 1, 0); // min_tokens=1
-        let chunker = Chunker::new(config.with_content_type(ContentType::Conversation), &counter);
+        let chunker = Chunker::new(
+            config.with_content_type(ContentType::Conversation),
+            &counter,
+        );
 
         let conv = "This is a longer message one for testing deduplication properly\n---\nThis is a longer message one for testing deduplication properly\n---\nThis is message two which is different";
         let chunks = chunker.chunk(conv);
@@ -496,19 +530,27 @@ fn two() {
     #[test]
     fn test_min_tokens_filter() {
         let (counter, config) = make_chunker(100, 200, 50, 0);
-        let chunker = Chunker::new(config.with_content_type(ContentType::Conversation), &counter);
+        let chunker = Chunker::new(
+            config.with_content_type(ContentType::Conversation),
+            &counter,
+        );
 
         let conv = "Hi\n---\nThis is a much longer message with enough tokens to pass the filter";
         let chunks = chunker.chunk(conv);
 
         // "Hi" should be filtered out due to min_tokens
-        assert!(chunks.iter().all(|c| c.tokens >= 50 || c.content.len() > 10));
+        assert!(chunks
+            .iter()
+            .all(|c| c.tokens >= 50 || c.content.len() > 10));
     }
 
     #[test]
     fn test_chunk_positions() {
         let (counter, config) = make_chunker(100, 200, 1, 0); // min_tokens=1
-        let chunker = Chunker::new(config.with_content_type(ContentType::Conversation), &counter);
+        let chunker = Chunker::new(
+            config.with_content_type(ContentType::Conversation),
+            &counter,
+        );
 
         let conv = "This is message one with enough content\n---\nThis is message two with enough content\n---\nThis is message three with enough content";
         let chunks = chunker.chunk(conv);
@@ -526,7 +568,9 @@ fn two() {
         let text = "# Header\nContent";
         let chunks = chunker.chunk_as(text, ContentType::Markdown);
 
-        assert!(chunks.iter().all(|c| c.content_type == ContentType::Markdown));
+        assert!(chunks
+            .iter()
+            .all(|c| c.content_type == ContentType::Markdown));
     }
 
     #[test]
@@ -539,7 +583,11 @@ fn two() {
         let chunks = chunker.chunk_with_size(&text, 30);
 
         // Should create multiple small chunks with target_tokens=30
-        assert!(chunks.len() > 1, "Expected multiple chunks, got {}", chunks.len());
+        assert!(
+            chunks.len() > 1,
+            "Expected multiple chunks, got {}",
+            chunks.len()
+        );
     }
 
     #[test]
@@ -549,12 +597,18 @@ fn two() {
         let chunker = Chunker::new(config.with_content_type(ContentType::Markdown), &counter);
 
         // Large content without headers that exceeds max_tokens
-        let large = (0..50).map(|i| format!("Line {} with content.", i)).collect::<Vec<_>>().join("\n");
+        let large = (0..50)
+            .map(|i| format!("Line {} with content.", i))
+            .collect::<Vec<_>>()
+            .join("\n");
         let chunks = chunker.chunk(&large);
 
         assert!(chunks.len() > 1, "Should force split large content");
         for chunk in chunks {
-            assert!(chunk.tokens <= 80, "Chunk should be within reasonable limits");
+            assert!(
+                chunk.tokens <= 80,
+                "Chunk should be within reasonable limits"
+            );
         }
     }
 
@@ -577,7 +631,10 @@ fn two() {
         let chunker = Chunker::new(config.with_content_type(ContentType::Code), &counter);
 
         // Large function that exceeds max_tokens
-        let code = (0..100).map(|i| format!("    let var{i} = {i};")).collect::<Vec<_>>().join("\n");
+        let code = (0..100)
+            .map(|i| format!("    let var{i} = {i};"))
+            .collect::<Vec<_>>()
+            .join("\n");
         let full_code = format!("fn large_function() {{\n{}\n}}", code);
         let chunks = chunker.chunk(&full_code);
 
@@ -684,9 +741,15 @@ import { something } from 'module';
         let chunker = Chunker::new(config, &counter);
 
         // Create large paragraphs that will need splitting
-        let text = (0..10).map(|i| {
-            (0..20).map(|j| format!("Sentence {} in paragraph {}.", j, i)).collect::<Vec<_>>().join(" ")
-        }).collect::<Vec<_>>().join("\n\n");
+        let text = (0..10)
+            .map(|i| {
+                (0..20)
+                    .map(|j| format!("Sentence {} in paragraph {}.", j, i))
+                    .collect::<Vec<_>>()
+                    .join(" ")
+            })
+            .collect::<Vec<_>>()
+            .join("\n\n");
 
         let chunks = chunker.chunk(&text);
         assert!(chunks.len() > 1);
@@ -696,7 +759,10 @@ import { something } from 'module';
     fn test_all_cached_batch() {
         // Test embed_batch when all texts are already cached
         let (counter, config) = make_chunker(100, 200, 1, 0);
-        let chunker = Chunker::new(config.with_content_type(ContentType::Conversation), &counter);
+        let chunker = Chunker::new(
+            config.with_content_type(ContentType::Conversation),
+            &counter,
+        );
 
         // First call caches
         let conv1 = "Message A here\n---\nMessage B here";

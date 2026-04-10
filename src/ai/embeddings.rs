@@ -2,10 +2,10 @@
 //!
 //! Uses FastEmbed for local, fast ML embeddings with LRU caching.
 
-use std::sync::{OnceLock, Mutex};
-use std::num::NonZeroUsize;
 use fastembed::{EmbeddingModel, InitOptions, TextEmbedding};
 use lru::LruCache;
+use std::num::NonZeroUsize;
+use std::sync::{Mutex, OnceLock};
 use xxhash_rust::xxh3::xxh3_64;
 
 use crate::core::error::{Error, Result};
@@ -150,8 +150,8 @@ pub struct GlobalEmbedder {
 impl GlobalEmbedder {
     fn new() -> std::result::Result<Self, String> {
         // Use quantized model for speed
-        let init_options = InitOptions::new(EmbeddingModel::AllMiniLML6V2Q)
-            .with_show_download_progress(false); // Quiet mode
+        let init_options =
+            InitOptions::new(EmbeddingModel::AllMiniLML6V2Q).with_show_download_progress(false); // Quiet mode
 
         let model = TextEmbedding::try_new(init_options)
             .map_err(|e| format!("Failed to initialize fastembed: {e}"))?;
@@ -170,13 +170,15 @@ impl GlobalEmbedder {
         }
 
         // Generate embedding
-        let embeddings = self.model
+        let embeddings = self
+            .model
             .embed(vec![text.to_string()], None)
             .map_err(|e| Error::ContextBuildError(format!("Embedding failed: {e}")))?;
 
-        let embedding = embeddings.into_iter().next().ok_or_else(|| {
-            Error::ContextBuildError("No embedding returned".to_string())
-        })?;
+        let embedding = embeddings
+            .into_iter()
+            .next()
+            .ok_or_else(|| Error::ContextBuildError("No embedding returned".to_string()))?;
 
         // Cache and return
         self.cache.insert(text, embedding.clone());
@@ -201,7 +203,8 @@ impl GlobalEmbedder {
 
         // Embed uncached texts
         if !uncached_texts.is_empty() {
-            let new_embeddings = self.model
+            let new_embeddings = self
+                .model
                 .embed(uncached_texts, None)
                 .map_err(|e| Error::ContextBuildError(format!("Embedding failed: {e}")))?;
 
@@ -221,25 +224,27 @@ impl GlobalEmbedder {
 
 /// Initialize the global embedder (call once at startup if you want to control timing)
 fn init_global_embedder() -> &'static Mutex<GlobalEmbedder> {
-    GLOBAL_EMBEDDER.get_or_init(|| {
-        match GlobalEmbedder::new() {
-            Ok(embedder) => Mutex::new(embedder),
-            Err(e) => panic!("Failed to initialize global embedder: {e}"),
-        }
+    GLOBAL_EMBEDDER.get_or_init(|| match GlobalEmbedder::new() {
+        Ok(embedder) => Mutex::new(embedder),
+        Err(e) => panic!("Failed to initialize global embedder: {e}"),
     })
 }
 
 /// Quick function to embed using global singleton
 pub fn embed_text(text: &str) -> Result<Vec<f32>> {
     let embedder = init_global_embedder();
-    let mut guard = embedder.lock().map_err(|e| Error::ContextBuildError(format!("Lock poisoned: {e}")))?;
+    let mut guard = embedder
+        .lock()
+        .map_err(|e| Error::ContextBuildError(format!("Lock poisoned: {e}")))?;
     guard.embed(text)
 }
 
 /// Quick function to batch embed using global singleton
 pub fn embed_batch(texts: &[&str]) -> Result<Vec<Vec<f32>>> {
     let embedder = init_global_embedder();
-    let mut guard = embedder.lock().map_err(|e| Error::ContextBuildError(format!("Lock poisoned: {e}")))?;
+    let mut guard = embedder
+        .lock()
+        .map_err(|e| Error::ContextBuildError(format!("Lock poisoned: {e}")))?;
     guard.embed_batch(texts)
 }
 

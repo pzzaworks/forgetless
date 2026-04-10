@@ -112,10 +112,18 @@ impl TempFiles {
     async fn new() -> std::io::Result<Self> {
         let dir = std::env::temp_dir().join(format!("forgetless-{}", Uuid::new_v4()));
         fs::create_dir_all(&dir).await?;
-        Ok(Self { dir, files: Vec::new() })
+        Ok(Self {
+            dir,
+            files: Vec::new(),
+        })
     }
 
-    async fn save(&mut self, name: &str, data: &[u8], priority: &str) -> std::io::Result<(PathBuf, String)> {
+    async fn save(
+        &mut self,
+        name: &str,
+        data: &[u8],
+        priority: &str,
+    ) -> std::io::Result<(PathBuf, String)> {
         let path = self.dir.join(name);
         fs::write(&path, data).await?;
         self.files.push(path.clone());
@@ -150,8 +158,11 @@ async fn optimize(mut multipart: Multipart) -> impl IntoResponse {
         Err(e) => {
             return (
                 StatusCode::INTERNAL_SERVER_ERROR,
-                Json(ErrorResponse { error: format!("Failed to create temp dir: {}", e) }),
-            ).into_response();
+                Json(ErrorResponse {
+                    error: format!("Failed to create temp dir: {}", e),
+                }),
+            )
+                .into_response();
         }
     };
 
@@ -181,8 +192,11 @@ async fn optimize(mut multipart: Multipart) -> impl IntoResponse {
                             temp_files.cleanup().await;
                             return (
                                 StatusCode::INTERNAL_SERVER_ERROR,
-                                Json(ErrorResponse { error: format!("Failed to save file: {}", e) }),
-                            ).into_response();
+                                Json(ErrorResponse {
+                                    error: format!("Failed to save file: {}", e),
+                                }),
+                            )
+                                .into_response();
                         }
                     }
                 }
@@ -191,8 +205,8 @@ async fn optimize(mut multipart: Multipart) -> impl IntoResponse {
     }
 
     // Build forgetless instance
-    let mut builder = Forgetless::new()
-        .config(Config::default().context_limit(metadata.max_tokens));
+    let mut builder =
+        Forgetless::new().config(Config::default().context_limit(metadata.max_tokens));
 
     // Add query if provided
     if let Some(query) = metadata.query {
@@ -244,7 +258,9 @@ async fn optimize(mut multipart: Multipart) -> impl IntoResponse {
             (StatusCode::OK, Json(response)).into_response()
         }
         Err(e) => {
-            let error = ErrorResponse { error: e.to_string() };
+            let error = ErrorResponse {
+                error: e.to_string(),
+            };
             (StatusCode::INTERNAL_SERVER_ERROR, Json(error)).into_response()
         }
     }
