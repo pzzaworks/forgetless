@@ -1,8 +1,8 @@
 //! Input types and traits for content handling
 
+use crate::input::file::read_file_content;
 use crate::processing::chunking::ContentType;
 use crate::processing::scoring::Priority;
-use crate::input::file::read_file_content;
 use std::path::Path;
 
 /// Content with priority attached - use for .add()
@@ -15,19 +15,31 @@ pub struct WithPriority {
 impl WithPriority {
     /// Create content with Critical priority
     pub fn critical(content: impl Into<String>) -> Self {
-        Self { content: content.into(), priority: Priority::Critical }
+        Self {
+            content: content.into(),
+            priority: Priority::Critical,
+        }
     }
     /// Create content with High priority
     pub fn high(content: impl Into<String>) -> Self {
-        Self { content: content.into(), priority: Priority::High }
+        Self {
+            content: content.into(),
+            priority: Priority::High,
+        }
     }
     /// Create content with Medium priority
     pub fn medium(content: impl Into<String>) -> Self {
-        Self { content: content.into(), priority: Priority::Medium }
+        Self {
+            content: content.into(),
+            priority: Priority::Medium,
+        }
     }
     /// Create content with Low priority
     pub fn low(content: impl Into<String>) -> Self {
-        Self { content: content.into(), priority: Priority::Low }
+        Self {
+            content: content.into(),
+            priority: Priority::Low,
+        }
     }
 }
 
@@ -41,19 +53,31 @@ pub struct FileWithPriority<P: AsRef<Path>> {
 impl<P: AsRef<Path>> FileWithPriority<P> {
     /// Create file with Critical priority
     pub fn critical(path: P) -> Self {
-        Self { path, priority: Priority::Critical }
+        Self {
+            path,
+            priority: Priority::Critical,
+        }
     }
     /// Create file with High priority
     pub fn high(path: P) -> Self {
-        Self { path, priority: Priority::High }
+        Self {
+            path,
+            priority: Priority::High,
+        }
     }
     /// Create file with Medium priority
     pub fn medium(path: P) -> Self {
-        Self { path, priority: Priority::Medium }
+        Self {
+            path,
+            priority: Priority::Medium,
+        }
     }
     /// Create file with Low priority
     pub fn low(path: P) -> Self {
-        Self { path, priority: Priority::Low }
+        Self {
+            path,
+            priority: Priority::Low,
+        }
     }
     /// Get the path
     pub fn path(&self) -> &Path {

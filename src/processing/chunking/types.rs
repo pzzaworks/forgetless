@@ -163,8 +163,14 @@ mod tests {
     fn test_content_type_detect() {
         assert_eq!(ContentType::detect_from_path("test.rs"), ContentType::Code);
         assert_eq!(ContentType::detect_from_path("test.py"), ContentType::Code);
-        assert_eq!(ContentType::detect_from_path("test.md"), ContentType::Markdown);
-        assert_eq!(ContentType::detect_from_path("test.json"), ContentType::Structured);
+        assert_eq!(
+            ContentType::detect_from_path("test.md"),
+            ContentType::Markdown
+        );
+        assert_eq!(
+            ContentType::detect_from_path("test.json"),
+            ContentType::Structured
+        );
         assert_eq!(ContentType::detect_from_path("test.txt"), ContentType::Text);
     }
 
@@ -217,8 +223,8 @@ mod tests {
     #[test]
     fn test_content_type_detect_all_code() {
         let code_extensions = [
-            ".rs", ".py", ".js", ".ts", ".tsx", ".jsx", ".go", ".c", ".cpp",
-            ".h", ".java", ".rb", ".php", ".swift", ".kt", ".scala", ".sh", ".bash",
+            ".rs", ".py", ".js", ".ts", ".tsx", ".jsx", ".go", ".c", ".cpp", ".h", ".java", ".rb",
+            ".php", ".swift", ".kt", ".scala", ".sh", ".bash",
         ];
 
         for ext in code_extensions {

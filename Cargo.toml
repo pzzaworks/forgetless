@@ -1,6 +1,6 @@
 [package]
 name = "forgetless"
-version = "0.1.1"
+version = "0.1.2"
 edition = "2021"
 authors = ["Berke (pzzaworks)"]
 description = "Smart context optimization for LLMs that compresses massive content to fit your token budget"

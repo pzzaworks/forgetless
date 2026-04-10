@@ -19,13 +19,13 @@
 //! let caption = describe_image(&image_bytes).await?;
 //! ```
 
-use std::sync::OnceLock;
-use tokio::sync::Mutex;
 use image::DynamicImage;
 use mistralrs::{
-    IsqType, Model, RequestBuilder, TextMessageRole, VisionMessages, VisionModelBuilder,
-    ChatCompletionResponse,
+    ChatCompletionResponse, IsqType, Model, RequestBuilder, TextMessageRole, VisionMessages,
+    VisionModelBuilder,
 };
+use std::sync::OnceLock;
+use tokio::sync::Mutex;
 
 use crate::core::error::{Error, Result};
 
@@ -85,8 +85,9 @@ fn resize_if_needed(img: DynamicImage) -> DynamicImage {
 
 /// Describe a DynamicImage
 async fn describe_dynamic_image(img: DynamicImage, prompt: &str) -> Result<String> {
-    let model = VISION_MODEL.get()
-        .ok_or_else(|| Error::ContextBuildError("Vision model not initialized. Call init_vision() first.".into()))?;
+    let model = VISION_MODEL.get().ok_or_else(|| {
+        Error::ContextBuildError("Vision model not initialized. Call init_vision() first.".into())
+    })?;
 
     let guard = model.lock().await;
 
@@ -95,12 +96,7 @@ async fn describe_dynamic_image(img: DynamicImage, prompt: &str) -> Result<Strin
 
     // Create image message
     let messages = VisionMessages::new()
-        .add_image_message(
-            TextMessageRole::User,
-            prompt,
-            vec![img],
-            &guard,
-        )
+        .add_image_message(TextMessageRole::User, prompt, vec![img], &guard)
         .map_err(|e| Error::ContextBuildError(format!("Failed to create image message: {e}")))?;
 
     // Build sampling params with strict max_len
@@ -109,7 +105,8 @@ async fn describe_dynamic_image(img: DynamicImage, prompt: &str) -> Result<Strin
         .set_sampler_temperature(0.1)
         .set_sampler_topp(0.9);
 
-    let response = guard.send_chat_request(request)
+    let response = guard
+        .send_chat_request(request)
         .await
         .map_err(|e| Error::ContextBuildError(format!("Vision inference failed: {e}")))?;
 
@@ -118,7 +115,9 @@ async fn describe_dynamic_image(img: DynamicImage, prompt: &str) -> Result<Strin
 
 /// Extract text from response
 fn extract_response_text(response: ChatCompletionResponse) -> Result<String> {
-    Ok(response.choices.first()
+    Ok(response
+        .choices
+        .first()
         .map(|c| c.message.content.clone().unwrap_or_default())
         .unwrap_or_default())
 }
@@ -141,18 +140,18 @@ mod tests {
     #[tokio::test]
     #[ignore] // Requires model download
     async fn test_describe_image() {
+        use image::{ImageBuffer, ImageFormat, Rgb};
         use std::io::Cursor;
-        use image::{ImageBuffer, Rgb, ImageFormat};
 
         init_vision().await.unwrap();
 
         // Create a simple 32x32 red square image
-        let img: ImageBuffer<Rgb<u8>, Vec<u8>> = ImageBuffer::from_fn(32, 32, |_, _| {
-            Rgb([255, 0, 0])
-        });
+        let img: ImageBuffer<Rgb<u8>, Vec<u8>> =
+            ImageBuffer::from_fn(32, 32, |_, _| Rgb([255, 0, 0]));
 
         let mut png_data: Vec<u8> = Vec::new();
-        img.write_to(&mut Cursor::new(&mut png_data), ImageFormat::Png).unwrap();
+        img.write_to(&mut Cursor::new(&mut png_data), ImageFormat::Png)
+            .unwrap();
 
         let description = describe_image(&png_data).await.unwrap();
         assert!(!description.is_empty());

@@ -1,15 +1,15 @@
 //! Forgetless builder and optimization pipeline
 
-use crate::processing::chunking::{Chunk, Chunker};
+use crate::ai::embeddings::{cosine_similarity, embed_batch};
+use crate::ai::llm::{LLMConfig, LLM};
 use crate::core::config::ForgetlessConfig;
-use crate::ai::embeddings::{embed_batch, cosine_similarity};
-use crate::ai::llm::{LLM, LLMConfig};
 use crate::core::error::Result;
+use crate::core::types::{OptimizationStats, OptimizedContext, ScoreBreakdown, ScoredChunk};
 use crate::input::content::{ContentInput, FileWithPriority, IntoContent, WithPriority};
 use crate::input::file::{read_file_content, read_file_preview};
+use crate::processing::chunking::{Chunk, Chunker};
 use crate::processing::scoring::Priority;
 use crate::processing::token::TokenCounter;
-use crate::core::types::{OptimizationStats, OptimizedContext, ScoredChunk, ScoreBreakdown};
 use std::path::{Path, PathBuf};
 
 /// Lazy file reference - not read until needed
@@ -27,38 +27,56 @@ pub(crate) trait IntoLazyFile {
 // Plain path types - default Medium priority
 impl IntoLazyFile for &str {
     fn into_lazy_file(self) -> LazyFile {
-        LazyFile { path: PathBuf::from(self), priority: Priority::Medium }
+        LazyFile {
+            path: PathBuf::from(self),
+            priority: Priority::Medium,
+        }
     }
 }
 
 impl IntoLazyFile for &&str {
     fn into_lazy_file(self) -> LazyFile {
-        LazyFile { path: PathBuf::from(*self), priority: Priority::Medium }
+        LazyFile {
+            path: PathBuf::from(*self),
+            priority: Priority::Medium,
+        }
     }
 }
 
 impl IntoLazyFile for String {
     fn into_lazy_file(self) -> LazyFile {
-        LazyFile { path: PathBuf::from(self), priority: Priority::Medium }
+        LazyFile {
+            path: PathBuf::from(self),
+            priority: Priority::Medium,
+        }
     }
 }
 
 impl IntoLazyFile for PathBuf {
     fn into_lazy_file(self) -> LazyFile {
-        LazyFile { path: self, priority: Priority::Medium }
+        LazyFile {
+            path: self,
+            priority: Priority::Medium,
+        }
     }
 }
 
 impl IntoLazyFile for &Path {
     fn into_lazy_file(self) -> LazyFile {
-        LazyFile { path: self.to_path_buf(), priority: Priority::Medium }
+        LazyFile {
+            path: self.to_path_buf(),
+            priority: Priority::Medium,
+        }
     }
 }
 
 // FileWithPriority - custom priority
 impl<P: AsRef<Path>> IntoLazyFile for FileWithPriority<P> {
     fn into_lazy_file(self) -> LazyFile {
-        LazyFile { path: self.path().to_path_buf(), priority: self.priority() }
+        LazyFile {
+            path: self.path().to_path_buf(),
+            priority: self.priority(),
+        }
     }
 }
 
@@ -80,8 +98,8 @@ impl<P: AsRef<Path>> IntoLazyFile for FileWithPriority<P> {
 /// ```
 pub struct Forgetless {
     pub(crate) config: ForgetlessConfig,
-    pub(crate) inputs: Vec<ContentInput>,      // Eager: already loaded content
-    pub(crate) lazy_files: Vec<LazyFile>,       // Lazy: files to be read on demand
+    pub(crate) inputs: Vec<ContentInput>, // Eager: already loaded content
+    pub(crate) lazy_files: Vec<LazyFile>, // Lazy: files to be read on demand
     pub(crate) query: Option<String>,
 }
 
@@ -221,9 +239,11 @@ impl Forgetless {
                 self.inputs.push(input);
             }
         } else {
-            let mut input = ContentInput::from_string(
-                format!("[Binary content: {} bytes, type: {}]", data.len(), mime_type)
-            );
+            let mut input = ContentInput::from_string(format!(
+                "[Binary content: {} bytes, type: {}]",
+                data.len(),
+                mime_type
+            ));
             input.source = format!("bytes:{mime_type}");
             input.priority = priority;
             self.inputs.push(input);
@@ -281,7 +301,8 @@ impl Forgetless {
             .par_iter()
             .filter_map(|lazy_file| {
                 read_file_content(&lazy_file.path).map(|(content, content_type)| {
-                    let mut input = ContentInput::from_file(content, &lazy_file.path.to_string_lossy());
+                    let mut input =
+                        ContentInput::from_file(content, &lazy_file.path.to_string_lossy());
                     input.content_type = content_type;
                     input.priority = lazy_file.priority;
                     input
@@ -296,7 +317,11 @@ impl Forgetless {
         let mut all_chunks: Vec<Chunk> = Vec::new();
 
         for input in &all_inputs {
-            let config = self.config.chunk.clone().with_content_type(input.content_type);
+            let config = self
+                .config
+                .chunk
+                .clone()
+                .with_content_type(input.content_type);
             let chunker = Chunker::new(config, &counter);
             let chunks = chunker.chunk(&input.content);
 
@@ -324,11 +349,14 @@ impl Forgetless {
 
             return Ok(OptimizedContext {
                 content,
-                chunks: all_chunks.into_iter().map(|c| ScoredChunk {
-                    chunk: c,
-                    score: 1.0,
-                    breakdown: ScoreBreakdown::default(),
-                }).collect(),
+                chunks: all_chunks
+                    .into_iter()
+                    .map(|c| ScoredChunk {
+                        chunk: c,
+                        score: 1.0,
+                        breakdown: ScoreBreakdown::default(),
+                    })
+                    .collect(),
                 total_tokens: input_tokens,
                 stats: OptimizationStats {
                     input_tokens,
@@ -345,7 +373,8 @@ impl Forgetless {
         let scored_chunks = self.score_chunks(&all_chunks)?;
 
         // Phase 6: Select best chunks within budget
-        let selected = self.select_within_budget_custom(scored_chunks, self.config.options.context_limit)?;
+        let selected =
+            self.select_within_budget_custom(scored_chunks, self.config.options.context_limit)?;
 
         // Phase 7: Build structured output
         let mut content = Self::build_structured_output_from_scored(&selected);
@@ -353,12 +382,13 @@ impl Forgetless {
         // Phase 8: Polish with LLM if enabled (reorganize and clean up)
         if self.config.options.context_llm && LLM::is_loaded() {
             // Collect chunk contents for polishing
-            let chunk_contents: Vec<&str> = selected.iter()
-                .map(|c| c.chunk.content.as_str())
-                .collect();
+            let chunk_contents: Vec<&str> =
+                selected.iter().map(|c| c.chunk.content.as_str()).collect();
 
             // Polish the content with LLM
-            if let Ok(polished) = crate::ai::llm::polish(&chunk_contents, self.query.as_deref()).await {
+            if let Ok(polished) =
+                crate::ai::llm::polish(&chunk_contents, self.query.as_deref()).await
+            {
                 if !polished.is_empty() {
                     content = polished;
                 }
@@ -393,13 +423,15 @@ impl Forgetless {
         let query_embedding = embed_batch(&[query])?.pop().unwrap_or_default();
 
         // Read preview of each file IN PARALLEL (this is the expensive part)
-        let previews: Vec<Option<String>> = self.lazy_files
+        let previews: Vec<Option<String>> = self
+            .lazy_files
             .par_iter()
             .map(|file| read_file_preview(&file.path))
             .collect();
 
         // Collect valid previews for batch embedding
-        let valid_previews: Vec<(usize, &str)> = previews.iter()
+        let valid_previews: Vec<(usize, &str)> = previews
+            .iter()
             .enumerate()
             .filter_map(|(i, p)| p.as_ref().map(|s| (i, s.as_str())))
             .collect();
@@ -413,7 +445,8 @@ impl Forgetless {
         let preview_embeddings = embed_batch(&preview_texts)?;
 
         // Create index map for embeddings
-        let mut embedding_map: std::collections::HashMap<usize, &Vec<f32>> = std::collections::HashMap::new();
+        let mut embedding_map: std::collections::HashMap<usize, &Vec<f32>> =
+            std::collections::HashMap::new();
         for ((idx, _), emb) in valid_previews.iter().zip(preview_embeddings.iter()) {
             embedding_map.insert(*idx, emb);
         }
@@ -443,7 +476,8 @@ impl Forgetless {
 
         // Take top N files - allow up to 100 relevant files for large document sets
         let max_files = 100.min(self.lazy_files.len());
-        let mut selected: Vec<&LazyFile> = scored.iter()
+        let mut selected: Vec<&LazyFile> = scored
+            .iter()
             .take(max_files)
             .filter(|(_, score)| *score > 0.35) // Only include if reasonably relevant
             .map(|(file, _)| *file)
@@ -473,7 +507,8 @@ impl Forgetless {
 
         for (source, chunks) in by_source {
             let header = format!("## {}", Self::format_source_name(source));
-            let content: String = chunks.iter()
+            let content: String = chunks
+                .iter()
                 .map(|c| c.content.as_str())
                 .collect::<Vec<_>>()
                 .join("\n\n");
@@ -499,7 +534,8 @@ impl Forgetless {
 
         for (source, chunks) in by_source {
             let header = format!("## {}", Self::format_source_name(source));
-            let content: String = chunks.iter()
+            let content: String = chunks
+                .iter()
                 .map(|c| c.chunk.content.as_str())
                 .collect::<Vec<_>>()
                 .join("\n\n");
@@ -515,7 +551,11 @@ impl Forgetless {
             "User Input".to_string()
         } else if source.contains('/') || source.contains('\\') {
             // Extract filename from path
-            source.rsplit(['/', '\\']).next().unwrap_or(source).to_string()
+            source
+                .rsplit(['/', '\\'])
+                .next()
+                .unwrap_or(source)
+                .to_string()
         } else {
             source.to_string()
         }
@@ -530,12 +570,11 @@ impl Forgetless {
         let max_embed = 100; // Max chunks to embed
         let chunks_to_embed: Vec<usize> = if let Some(ref query) = self.query {
             // Extract keywords from query (words > 3 chars)
-            let keywords: Vec<&str> = query.split_whitespace()
-                .filter(|w| w.len() > 3)
-                .collect();
+            let keywords: Vec<&str> = query.split_whitespace().filter(|w| w.len() > 3).collect();
 
             // Score chunks by keyword presence
-            let mut keyword_scores: Vec<(usize, f32)> = chunks.iter()
+            let mut keyword_scores: Vec<(usize, f32)> = chunks
+                .iter()
                 .enumerate()
                 .map(|(i, chunk)| {
                     // Critical always included
@@ -543,7 +582,8 @@ impl Forgetless {
                         return (i, 100.0);
                     }
                     let content_lower = chunk.content.to_lowercase();
-                    let matches = keywords.iter()
+                    let matches = keywords
+                        .iter()
                         .filter(|k| content_lower.contains(&k.to_lowercase()))
                         .count();
                     (i, matches as f32 / keywords.len().max(1) as f32)
@@ -551,7 +591,8 @@ impl Forgetless {
                 .collect();
 
             keyword_scores.sort_by(|a, b| b.1.partial_cmp(&a.1).unwrap());
-            keyword_scores.into_iter()
+            keyword_scores
+                .into_iter()
                 .take(max_embed)
                 .map(|(i, _)| i)
                 .collect()
@@ -561,13 +602,15 @@ impl Forgetless {
         };
 
         // Embed only selected chunks
-        let texts: Vec<&str> = chunks_to_embed.iter()
+        let texts: Vec<&str> = chunks_to_embed
+            .iter()
             .map(|&i| chunks[i].content.as_str())
             .collect();
         let chunk_embeddings = embed_batch(&texts)?;
 
         // Create embedding map
-        let mut embedding_map: std::collections::HashMap<usize, Vec<f32>> = std::collections::HashMap::new();
+        let mut embedding_map: std::collections::HashMap<usize, Vec<f32>> =
+            std::collections::HashMap::new();
         for (idx, emb) in chunks_to_embed.iter().zip(chunk_embeddings.into_iter()) {
             embedding_map.insert(*idx, emb);
         }
@@ -611,11 +654,12 @@ impl Forgetless {
             let position_score = 1.0 - (chunk.position as f32 / chunks.len().max(1) as f32) * 0.3;
 
             // Recency boost for conversation-like content
-            let recency_score = if chunk.content.contains("User:") || chunk.content.contains("Assistant:") {
-                0.3 + (chunk.position as f32 / chunks.len().max(1) as f32) * 0.7
-            } else {
-                0.5
-            };
+            let recency_score =
+                if chunk.content.contains("User:") || chunk.content.contains("Assistant:") {
+                    0.3 + (chunk.position as f32 / chunks.len().max(1) as f32) * 0.7
+                } else {
+                    0.5
+                };
 
             // Combined score (embedding + algorithmic)
             let final_score = if chunk.priority == Priority::Critical {
@@ -641,19 +685,31 @@ impl Forgetless {
         }
 
         // Sort by score descending
-        scored.sort_by(|a, b| b.score.partial_cmp(&a.score).unwrap_or(std::cmp::Ordering::Equal));
+        scored.sort_by(|a, b| {
+            b.score
+                .partial_cmp(&a.score)
+                .unwrap_or(std::cmp::Ordering::Equal)
+        });
 
         Ok(scored)
     }
 
     /// Select chunks within token budget (uses config max_tokens)
     #[allow(dead_code)]
-    fn select_within_budget(&self, chunks: Vec<ScoredChunk>, _counter: &TokenCounter) -> Result<Vec<ScoredChunk>> {
+    fn select_within_budget(
+        &self,
+        chunks: Vec<ScoredChunk>,
+        _counter: &TokenCounter,
+    ) -> Result<Vec<ScoredChunk>> {
         self.select_within_budget_custom(chunks, self.config.options.context_limit)
     }
 
     /// Select chunks within a custom token budget
-    fn select_within_budget_custom(&self, chunks: Vec<ScoredChunk>, budget: usize) -> Result<Vec<ScoredChunk>> {
+    fn select_within_budget_custom(
+        &self,
+        chunks: Vec<ScoredChunk>,
+        budget: usize,
+    ) -> Result<Vec<ScoredChunk>> {
         let mut selected = Vec::new();
         let mut remaining = Vec::new();
         let mut used_tokens = 0;
@@ -736,23 +792,19 @@ mod tests {
 
     #[test]
     fn test_add() {
-        let f = Forgetless::new()
-            .add("content 1")
-            .add("content 2");
+        let f = Forgetless::new().add("content 1").add("content 2");
         assert_eq!(f.inputs.len(), 2);
     }
 
     #[test]
     fn test_add_with_priority() {
-        let f = Forgetless::new()
-            .add(WithPriority::critical("important"));
+        let f = Forgetless::new().add(WithPriority::critical("important"));
         assert_eq!(f.inputs[0].priority, Priority::Critical);
     }
 
     #[test]
     fn test_add_pinned() {
-        let f = Forgetless::new()
-            .add_pinned("pinned content");
+        let f = Forgetless::new().add_pinned("pinned content");
         assert_eq!(f.inputs[0].priority, Priority::Critical);
     }
 
@@ -781,26 +833,21 @@ mod tests {
     #[test]
     fn test_add_bytes() {
         let data = b"test content";
-        let f = Forgetless::new()
-            .add_bytes(&data[..], "text/plain");
+        let f = Forgetless::new().add_bytes(&data[..], "text/plain");
         assert_eq!(f.inputs[0].priority, Priority::Medium);
     }
 
     #[test]
     fn test_add_bytes_binary() {
         let data = vec![0u8, 1, 2, 3, 255];
-        let f = Forgetless::new()
-            .add_bytes_p(&data, "application/octet-stream", Priority::Low);
+        let f = Forgetless::new().add_bytes_p(&data, "application/octet-stream", Priority::Low);
         assert!(f.inputs[0].content.contains("Binary content"));
     }
 
     #[test]
     fn test_config() {
         use crate::core::config::Config;
-        let f = Forgetless::new()
-            .config(Config::default()
-                .context_limit(64_000)
-                .vision_llm(true));
+        let f = Forgetless::new().config(Config::default().context_limit(64_000).vision_llm(true));
         assert_eq!(f.config.options.context_limit, 64_000);
         assert!(f.config.options.vision_llm);
     }
@@ -831,7 +878,9 @@ mod tests {
     async fn test_run_compression() {
         use crate::core::config::Config;
         // ~50K tokens of content -> compress to 32K
-        let large_content = "This is a test sentence with some meaningful words about AI and machine learning. ".repeat(5000);
+        let large_content =
+            "This is a test sentence with some meaningful words about AI and machine learning. "
+                .repeat(5000);
 
         let result = Forgetless::new()
             .config(Config::default().context_limit(32_000))
@@ -841,53 +890,58 @@ mod tests {
 
         assert!(result.is_ok());
         let ctx = result.unwrap();
-        assert!(ctx.total_tokens <= 35_000, "Got {} tokens", ctx.total_tokens);
-        assert!(ctx.stats.compression_ratio > 1.2, "Expected compression, got {}", ctx.stats.compression_ratio);
+        assert!(
+            ctx.total_tokens <= 35_000,
+            "Got {} tokens",
+            ctx.total_tokens
+        );
+        assert!(
+            ctx.stats.compression_ratio > 1.2,
+            "Expected compression, got {}",
+            ctx.stats.compression_ratio
+        );
     }
 
     #[test]
     fn test_query() {
-        let f = Forgetless::new()
-            .query("What is Rust?");
+        let f = Forgetless::new().query("What is Rust?");
         assert_eq!(f.query, Some("What is Rust?".to_string()));
     }
 
     #[test]
     fn test_add_file() {
-        let f = Forgetless::new()
-            .add_file("Cargo.toml");
+        let f = Forgetless::new().add_file("Cargo.toml");
         // Files are lazy loaded now
         assert_eq!(f.lazy_files.len(), 1);
-        assert!(f.lazy_files[0].path.to_string_lossy().contains("Cargo.toml"));
+        assert!(f.lazy_files[0]
+            .path
+            .to_string_lossy()
+            .contains("Cargo.toml"));
     }
 
     #[test]
     fn test_add_file_nonexistent() {
-        let f = Forgetless::new()
-            .add_file("nonexistent_12345.txt");
+        let f = Forgetless::new().add_file("nonexistent_12345.txt");
         // Lazy loading - file is added but will fail at run() time
         assert_eq!(f.lazy_files.len(), 1);
     }
 
     #[test]
     fn test_add_files() {
-        let f = Forgetless::new()
-            .add_files(&["Cargo.toml", "src/lib.rs"]);
+        let f = Forgetless::new().add_files(&["Cargo.toml", "src/lib.rs"]);
         assert_eq!(f.lazy_files.len(), 2);
     }
 
     #[test]
     fn test_add_files_with_nonexistent() {
-        let f = Forgetless::new()
-            .add_files(&["Cargo.toml", "nonexistent.txt"]);
+        let f = Forgetless::new().add_files(&["Cargo.toml", "nonexistent.txt"]);
         // Lazy loading - both are added, nonexistent will be skipped at run()
         assert_eq!(f.lazy_files.len(), 2);
     }
 
     #[test]
     fn test_add_files_with_priority() {
-        let f = Forgetless::new()
-            .add_files([FileWithPriority::high("Cargo.toml")]);
+        let f = Forgetless::new().add_files([FileWithPriority::high("Cargo.toml")]);
         assert_eq!(f.lazy_files.len(), 1);
         assert_eq!(f.lazy_files[0].priority, Priority::High);
     }
@@ -895,8 +949,7 @@ mod tests {
     #[test]
     fn test_add_bytes_invalid_utf8() {
         let data = vec![0xFF, 0xFE, 0x00, 0x01];
-        let f = Forgetless::new()
-            .add_bytes(&data, "text/plain");
+        let f = Forgetless::new().add_bytes(&data, "text/plain");
         // Invalid UTF-8 should be treated as binary
         assert!(f.inputs.is_empty() || f.inputs[0].content.contains("Binary"));
     }
@@ -910,10 +963,7 @@ mod tests {
 
     #[test]
     fn test_calculate_centroid_multiple() {
-        let embeddings = vec![
-            vec![0.0, 0.0, 0.0],
-            vec![2.0, 4.0, 6.0],
-        ];
+        let embeddings = vec![vec![0.0, 0.0, 0.0], vec![2.0, 4.0, 6.0]];
         let centroid = calculate_centroid(&embeddings);
         assert_eq!(centroid, vec![1.0, 2.0, 3.0]);
     }
@@ -970,19 +1020,29 @@ mod tests {
     async fn test_run_with_critical_priority() {
         use crate::core::config::Config;
         // ~20K tokens of low priority content
-        let large_content = "Low priority content about random topics that should be compressed away. ".repeat(2000);
+        let large_content =
+            "Low priority content about random topics that should be compressed away. "
+                .repeat(2000);
 
         let result = Forgetless::new()
             .config(Config::default().context_limit(16_000))
             .add(&large_content)
-            .add(WithPriority::critical("CRITICAL: This system instruction must always be included in the output!"))
+            .add(WithPriority::critical(
+                "CRITICAL: This system instruction must always be included in the output!",
+            ))
             .run()
             .await;
 
         assert!(result.is_ok());
         let ctx = result.unwrap();
         // Critical content should always be included regardless of compression
-        assert!(ctx.content.contains("CRITICAL") || ctx.chunks.iter().any(|c| c.chunk.priority == Priority::Critical));
+        assert!(
+            ctx.content.contains("CRITICAL")
+                || ctx
+                    .chunks
+                    .iter()
+                    .any(|c| c.chunk.priority == Priority::Critical)
+        );
     }
 
     #[tokio::test]
@@ -1000,14 +1060,21 @@ mod tests {
 
         assert!(result.is_ok());
         let ctx = result.unwrap();
-        assert!(ctx.total_tokens <= 10_000, "Got {} tokens", ctx.total_tokens);
-        assert!(ctx.stats.compression_ratio > 5.0, "Expected high compression, got {}", ctx.stats.compression_ratio);
+        assert!(
+            ctx.total_tokens <= 10_000,
+            "Got {} tokens",
+            ctx.total_tokens
+        );
+        assert!(
+            ctx.stats.compression_ratio > 5.0,
+            "Expected high compression, got {}",
+            ctx.stats.compression_ratio
+        );
     }
 
     #[test]
     fn test_add_file_with_priority() {
-        let f = Forgetless::new()
-            .add_file(FileWithPriority::high("Cargo.toml"));
+        let f = Forgetless::new().add_file(FileWithPriority::high("Cargo.toml"));
         assert_eq!(f.lazy_files.len(), 1);
         assert_eq!(f.lazy_files[0].priority, Priority::High);
     }
@@ -1022,17 +1089,17 @@ mod tests {
         assert!(!f.config.options.context_llm);
 
         // Enable vision LLM
-        let f = Forgetless::new()
-            .config(Config::default().vision_llm(true));
+        let f = Forgetless::new().config(Config::default().vision_llm(true));
         assert!(f.config.options.vision_llm);
         assert!(!f.config.options.context_llm);
 
         // Enable both
-        let f = Forgetless::new()
-            .config(Config::default()
+        let f = Forgetless::new().config(
+            Config::default()
                 .vision_llm(true)
                 .context_llm(true)
-                .context_limit(64_000));
+                .context_limit(64_000),
+        );
         assert!(f.config.options.vision_llm);
         assert!(f.config.options.context_llm);
         assert_eq!(f.config.options.context_limit, 64_000);

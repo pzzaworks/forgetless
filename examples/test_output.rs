@@ -23,7 +23,10 @@ async fn main() {
     println!("Input tokens: {}", result.stats.input_tokens);
     println!("Output tokens: {}", result.stats.output_tokens);
     println!("Compression: {:.1}x", result.stats.compression_ratio);
-    println!("Chunks selected: {} / {}", result.stats.chunks_selected, result.stats.chunks_processed);
+    println!(
+        "Chunks selected: {} / {}",
+        result.stats.chunks_selected, result.stats.chunks_processed
+    );
     println!("\nContent:\n{}\n", &result.content);
 
     // Test 2: PDF with specific query
@@ -38,8 +41,14 @@ async fn main() {
 
     println!("Input tokens: {}", result.stats.input_tokens);
     println!("Output tokens: {}", result.stats.output_tokens);
-    println!("Chunks: {} -> {}", result.stats.chunks_processed, result.stats.chunks_selected);
-    println!("\nContent (first 500 chars):\n{}\n", &result.content.chars().take(500).collect::<String>());
+    println!(
+        "Chunks: {} -> {}",
+        result.stats.chunks_processed, result.stats.chunks_selected
+    );
+    println!(
+        "\nContent (first 500 chars):\n{}\n",
+        &result.content.chars().take(500).collect::<String>()
+    );
 
     // Test 3: Multiple PDFs compression
     println!("=== TEST 3: Two PDFs Compressed ===");
@@ -55,5 +64,8 @@ async fn main() {
     println!("Input tokens: {}", result.stats.input_tokens);
     println!("Output tokens: {}", result.stats.output_tokens);
     println!("Compression: {:.1}x", result.stats.compression_ratio);
-    println!("Chunks: {} -> {}", result.stats.chunks_processed, result.stats.chunks_selected);
+    println!(
+        "Chunks: {} -> {}",
+        result.stats.chunks_processed, result.stats.chunks_selected
+    );
 }

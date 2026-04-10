@@ -88,7 +88,12 @@ impl TokenCounter {
     pub fn count(&self, text: &str) -> usize {
         match (&self.bpe, self.model) {
             (Some(bpe), _) => bpe.encode_with_special_tokens(text).len(),
-            (None, TokenizerModel::Custom { chars_per_token_x100 }) => {
+            (
+                None,
+                TokenizerModel::Custom {
+                    chars_per_token_x100,
+                },
+            ) => {
                 let chars_per_token = chars_per_token_x100 as f32 / 100.0;
                 (text.chars().count() as f32 / chars_per_token).ceil() as usize
             }
@@ -120,7 +125,10 @@ impl TokenCounter {
 
     /// Count tokens for multiple images
     pub fn count_images(&self, images: &[(ImageDimensions, ImageDetail)]) -> usize {
-        images.iter().map(|(dim, detail)| self.count_image(*dim, *detail)).sum()
+        images
+            .iter()
+            .map(|(dim, detail)| self.count_image(*dim, *detail))
+            .sum()
     }
 
     /// Count tokens for multiple texts
@@ -133,7 +141,10 @@ impl TokenCounter {
             return (width, height);
         }
         let ratio = (max_size as f32) / (width.max(height) as f32);
-        ((width as f32 * ratio) as u32, (height as f32 * ratio) as u32)
+        (
+            (width as f32 * ratio) as u32,
+            (height as f32 * ratio) as u32,
+        )
     }
 
     fn scale_shortest_side(width: u32, height: u32, target: u32) -> (u32, u32) {
@@ -142,7 +153,10 @@ impl TokenCounter {
             return (width, height);
         }
         let ratio = target as f32 / shortest as f32;
-        ((width as f32 * ratio) as u32, (height as f32 * ratio) as u32)
+        (
+            (width as f32 * ratio) as u32,
+            (height as f32 * ratio) as u32,
+        )
     }
 
     /// Estimate if text fits within token budget
@@ -161,7 +175,10 @@ impl TokenCounter {
             bpe.decode(truncated_tokens).unwrap_or_default()
         } else {
             // Char-based truncation for Custom tokenizer
-            let TokenizerModel::Custom { chars_per_token_x100 } = self.model else {
+            let TokenizerModel::Custom {
+                chars_per_token_x100,
+            } = self.model
+            else {
                 unreachable!("Only Custom model has no BPE");
             };
             let chars_per_token = chars_per_token_x100 as f32 / 100.0;
@@ -296,18 +313,27 @@ mod tests {
         assert_eq!(TokenizerModel::Default, TokenizerModel::Default);
         assert_ne!(
             TokenizerModel::Default,
-            TokenizerModel::Custom { chars_per_token_x100: 400 }
+            TokenizerModel::Custom {
+                chars_per_token_x100: 400
+            }
         );
         assert_ne!(
-            TokenizerModel::Custom { chars_per_token_x100: 400 },
-            TokenizerModel::Custom { chars_per_token_x100: 300 }
+            TokenizerModel::Custom {
+                chars_per_token_x100: 400
+            },
+            TokenizerModel::Custom {
+                chars_per_token_x100: 300
+            }
         );
     }
 
     #[test]
     fn test_image_token_counting_low() {
         let counter = TokenCounter::new(TokenizerModel::Default).unwrap();
-        let dims = ImageDimensions { width: 1024, height: 768 };
+        let dims = ImageDimensions {
+            width: 1024,
+            height: 768,
+        };
         let tokens = counter.count_image(dims, ImageDetail::Low);
         assert_eq!(tokens, 85);
     }
@@ -315,7 +341,10 @@ mod tests {
     #[test]
     fn test_image_token_counting_high() {
         let counter = TokenCounter::new(TokenizerModel::Default).unwrap();
-        let dims = ImageDimensions { width: 1024, height: 1024 };
+        let dims = ImageDimensions {
+            width: 1024,
+            height: 1024,
+        };
         let tokens = counter.count_image(dims, ImageDetail::High);
         assert!(tokens > 85);
     }
@@ -324,8 +353,20 @@ mod tests {
     fn test_count_images() {
         let counter = TokenCounter::new(TokenizerModel::Default).unwrap();
         let images = vec![
-            (ImageDimensions { width: 512, height: 512 }, ImageDetail::Low),
-            (ImageDimensions { width: 512, height: 512 }, ImageDetail::Low),
+            (
+                ImageDimensions {
+                    width: 512,
+                    height: 512,
+                },
+                ImageDetail::Low,
+            ),
+            (
+                ImageDimensions {
+                    width: 512,
+                    height: 512,
+                },
+                ImageDetail::Low,
+            ),
         ];
         let tokens = counter.count_images(&images);
         assert_eq!(tokens, 170); // 85 * 2
@@ -334,7 +375,10 @@ mod tests {
     #[test]
     fn test_image_token_counting_auto() {
         let counter = TokenCounter::new(TokenizerModel::Default).unwrap();
-        let dims = ImageDimensions { width: 1024, height: 1024 };
+        let dims = ImageDimensions {
+            width: 1024,
+            height: 1024,
+        };
         let tokens = counter.count_image(dims, ImageDetail::Auto);
         // Auto behaves like High
         assert!(tokens > 85);
@@ -350,7 +394,10 @@ mod tests {
     fn test_image_small_no_scaling() {
         let counter = TokenCounter::new(TokenizerModel::Default).unwrap();
         // Small image that doesn't need scaling
-        let dims = ImageDimensions { width: 256, height: 256 };
+        let dims = ImageDimensions {
+            width: 256,
+            height: 256,
+        };
         let tokens = counter.count_image(dims, ImageDetail::High);
         assert!(tokens > 85);
     }
@@ -359,7 +406,10 @@ mod tests {
     fn test_image_large_needs_scaling() {
         let counter = TokenCounter::new(TokenizerModel::Default).unwrap();
         // Large image that needs scaling
-        let dims = ImageDimensions { width: 4096, height: 4096 };
+        let dims = ImageDimensions {
+            width: 4096,
+            height: 4096,
+        };
         let tokens = counter.count_image(dims, ImageDetail::High);
         assert!(tokens > 85);
     }
@@ -367,7 +417,10 @@ mod tests {
     #[test]
     fn test_image_tall_aspect_ratio() {
         let counter = TokenCounter::new(TokenizerModel::Default).unwrap();
-        let dims = ImageDimensions { width: 512, height: 2048 };
+        let dims = ImageDimensions {
+            width: 512,
+            height: 2048,
+        };
         let tokens = counter.count_image(dims, ImageDetail::High);
         assert!(tokens > 85);
     }
@@ -375,7 +428,10 @@ mod tests {
     #[test]
     fn test_image_wide_aspect_ratio() {
         let counter = TokenCounter::new(TokenizerModel::Default).unwrap();
-        let dims = ImageDimensions { width: 2048, height: 512 };
+        let dims = ImageDimensions {
+            width: 2048,
+            height: 512,
+        };
         let tokens = counter.count_image(dims, ImageDetail::High);
         assert!(tokens > 85);
     }

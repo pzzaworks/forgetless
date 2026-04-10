@@ -59,7 +59,10 @@ fn bench_vision(c: &mut Criterion) {
 
     println!("\n");
     println!("╔══════════════════════════════════════════════════════════════════╗");
-    println!("║  VISION LLM BENCHMARK: {} images                                  ║", images.len());
+    println!(
+        "║  VISION LLM BENCHMARK: {} images                                  ║",
+        images.len()
+    );
     println!("╚══════════════════════════════════════════════════════════════════╝");
 
     let mut group = c.benchmark_group("vision");
@@ -73,9 +76,7 @@ fn bench_vision(c: &mut Criterion) {
         b.iter(|| {
             rt.block_on(async {
                 let result = Forgetless::new()
-                    .config(Config::default()
-                        .context_limit(16_000)
-                        .vision_llm(true))
+                    .config(Config::default().context_limit(16_000).vision_llm(true))
                     .add(WithPriority::critical("Analyze this diagram."))
                     .add_file(FileWithPriority::high(&img))
                     .query("What does this image show?")
@@ -90,14 +91,16 @@ fn bench_vision(c: &mut Criterion) {
     // Multiple images
     if images.len() >= 2 {
         group.bench_function("two_images", |b| {
-            let imgs: Vec<_> = images.iter().take(2).map(|p| p.to_string_lossy().to_string()).collect();
+            let imgs: Vec<_> = images
+                .iter()
+                .take(2)
+                .map(|p| p.to_string_lossy().to_string())
+                .collect();
 
             b.iter(|| {
                 rt.block_on(async {
                     let mut builder = Forgetless::new()
-                        .config(Config::default()
-                            .context_limit(16_000)
-                            .vision_llm(true))
+                        .config(Config::default().context_limit(16_000).vision_llm(true))
                         .add(WithPriority::critical("Compare these diagrams."))
                         .query("What do these images show?");
 
@@ -115,14 +118,15 @@ fn bench_vision(c: &mut Criterion) {
     // All images
     if images.len() >= 3 {
         group.bench_function("all_images", |b| {
-            let imgs: Vec<_> = images.iter().map(|p| p.to_string_lossy().to_string()).collect();
+            let imgs: Vec<_> = images
+                .iter()
+                .map(|p| p.to_string_lossy().to_string())
+                .collect();
 
             b.iter(|| {
                 rt.block_on(async {
                     let mut builder = Forgetless::new()
-                        .config(Config::default()
-                            .context_limit(32_000)
-                            .vision_llm(true))
+                        .config(Config::default().context_limit(32_000).vision_llm(true))
                         .add(WithPriority::critical("Analyze all diagrams."))
                         .query("Describe each image and their relationships");
 
@@ -161,17 +165,20 @@ fn bench_vision_detailed(c: &mut Criterion) {
     println!("╚══════════════════════════════════════════════════════════════════╝");
 
     for img in &images {
-        println!("  - {}", img.file_name().unwrap_or_default().to_string_lossy());
+        println!(
+            "  - {}",
+            img.file_name().unwrap_or_default().to_string_lossy()
+        );
     }
 
     let start = Instant::now();
 
     let result = rt.block_on(async {
         let mut builder = Forgetless::new()
-            .config(Config::default()
-                .context_limit(16_000)
-                .vision_llm(true))
-            .add(WithPriority::critical("You are an expert at analyzing technical diagrams."))
+            .config(Config::default().context_limit(16_000).vision_llm(true))
+            .add(WithPriority::critical(
+                "You are an expert at analyzing technical diagrams.",
+            ))
             .query("Describe what each diagram shows and explain the key concepts");
 
         for img in &images {
@@ -189,7 +196,10 @@ fn bench_vision_detailed(c: &mut Criterion) {
     println!("    Chunks:      {:>10}", result.stats.chunks_selected);
     println!("    Time:        {:>10.2}s", elapsed.as_secs_f64());
     println!("\n  Content preview:");
-    println!("    {}", &result.content.chars().take(200).collect::<String>());
+    println!(
+        "    {}",
+        &result.content.chars().take(200).collect::<String>()
+    );
     println!("    ...");
     println!("\n");
 
@@ -226,23 +236,32 @@ fn bench_mixed(c: &mut Criterion) {
 
     println!("\n");
     println!("╔══════════════════════════════════════════════════════════════════╗");
-    println!("║  MIXED BENCHMARK: {} images + {} PDFs                              ║", images.len(), pdfs.len());
+    println!(
+        "║  MIXED BENCHMARK: {} images + {} PDFs                              ║",
+        images.len(),
+        pdfs.len()
+    );
     println!("╚══════════════════════════════════════════════════════════════════╝");
 
     let mut group = c.benchmark_group("mixed");
     group.sample_size(10);
 
     group.bench_function("images_pdfs_text", |b| {
-        let imgs: Vec<_> = images.iter().map(|p| p.to_string_lossy().to_string()).collect();
-        let pdf_paths: Vec<_> = pdfs.iter().map(|p| p.to_string_lossy().to_string()).collect();
-        let conversation = "User: Explain transformers.\nAssistant: Transformers use self-attention...";
+        let imgs: Vec<_> = images
+            .iter()
+            .map(|p| p.to_string_lossy().to_string())
+            .collect();
+        let pdf_paths: Vec<_> = pdfs
+            .iter()
+            .map(|p| p.to_string_lossy().to_string())
+            .collect();
+        let conversation =
+            "User: Explain transformers.\nAssistant: Transformers use self-attention...";
 
         b.iter(|| {
             rt.block_on(async {
                 let mut builder = Forgetless::new()
-                    .config(Config::default()
-                        .context_limit(16_000)
-                        .vision_llm(true))
+                    .config(Config::default().context_limit(16_000).vision_llm(true))
                     .add(WithPriority::critical("You are an AI research expert."))
                     .add(WithPriority::high(conversation))
                     .query("Explain the transformer architecture using the diagrams and papers");

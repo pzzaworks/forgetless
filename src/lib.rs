@@ -34,13 +34,17 @@ pub mod processing;
 // Core types
 pub use core::config::{Config, ForgetlessConfig, ScoringConfig};
 pub use core::error::{Error, Result};
-pub use core::types::{OptimizationStats, OptimizedContext, PolishedContext, ScoredChunk, ScoreBreakdown};
+pub use core::types::{
+    OptimizationStats, OptimizedContext, PolishedContext, ScoreBreakdown, ScoredChunk,
+};
 
 // Builder
 pub use builder::Forgetless;
 
 // Input
-pub use input::content::{ContentInput, FileWithPriority, IntoContent, IntoFileContent, WithPriority};
+pub use input::content::{
+    ContentInput, FileWithPriority, IntoContent, IntoFileContent, WithPriority,
+};
 pub use input::file::read_file_content;
 
 // Processing
