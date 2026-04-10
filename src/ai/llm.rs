@@ -6,7 +6,8 @@
 //!
 //! - **SmolLM2-135M** - Smallest, fastest
 //! - **SmolLM2-360M** - Better quality, still fast
-//! - **Qwen2.5-0.5B** - Good balance (default)
+//! - **Qwen3-0.6B** - Good balance (default)
+//! - **Qwen2.5-0.5B** - Previous small default
 //! - **Phi-3-mini** - Best quality, slower
 //! - Any HuggingFace model compatible with mistral.rs
 //!
@@ -17,7 +18,7 @@
 //!
 //! #[tokio::main]
 //! async fn main() {
-//!     // Default: Qwen2.5-0.5B with Q4 quantization
+//!     // Default: Qwen3-0.6B with Q4 quantization
 //!     LLM::init().await.unwrap();
 //!
 //!     // Or with custom config
@@ -31,10 +32,8 @@
 //! }
 //! ```
 
+use mistralrs::{IsqType, Model, RequestBuilder, TextMessageRole, TextMessages, TextModelBuilder};
 use serde::{Deserialize, Serialize};
-use mistralrs::{
-    IsqType, Model, RequestBuilder, TextMessageRole, TextMessages, TextModelBuilder,
-};
 use std::sync::{Arc, OnceLock};
 use tokio::sync::Mutex;
 
@@ -85,8 +84,8 @@ impl Default for Quantization {
 
 impl Default for LLMConfig {
     fn default() -> Self {
-        // Qwen2.5-0.5B is the smallest model that reliably follows instructions
-        Self::qwen_0_5b()
+        // Qwen3-0.6B is the current small default with stronger instruction following.
+        Self::qwen3_0_6b()
     }
 }
 
@@ -110,6 +109,18 @@ impl LLMConfig {
             quantization: Quantization::Q4,
             temperature: 0.3,
             top_p: 0.9,
+            max_tokens: 256,
+            repetition_penalty: 1.1,
+        }
+    }
+
+    /// Qwen3-0.6B - Current small default (600M params)
+    pub fn qwen3_0_6b() -> Self {
+        Self {
+            model_id: "Qwen/Qwen3-0.6B".to_string(),
+            quantization: Quantization::Q4,
+            temperature: 0.7,
+            top_p: 0.8,
             max_tokens: 256,
             repetition_penalty: 1.1,
         }
@@ -182,11 +193,27 @@ struct ModelState {
     config: LLMConfig,
 }
 
+fn extract_visible_content(raw: &str) -> String {
+    let mut cleaned = raw.trim().to_string();
+
+    while let Some(start) = cleaned.find("<think>") {
+        if let Some(relative_end) = cleaned[start..].find("</think>") {
+            let end = start + relative_end + "</think>".len();
+            cleaned.replace_range(start..end, "");
+        } else {
+            cleaned.truncate(start);
+            break;
+        }
+    }
+
+    cleaned.trim().to_string()
+}
+
 /// LLM provider for text generation
 pub struct LLM;
 
 impl LLM {
-    /// Initialize with default config (Qwen2.5-0.5B)
+    /// Initialize with default config (Qwen3-0.6B)
     pub async fn init() -> Result<()> {
         Self::init_with_config(LLMConfig::default()).await
     }
@@ -198,7 +225,11 @@ impl LLM {
             return Ok(());
         }
 
-        tracing::info!("Loading LLM: {} ({:?})", config.model_id, config.quantization);
+        tracing::info!(
+            "Loading LLM: {} ({:?})",
+            config.model_id,
+            config.quantization
+        );
 
         let mut builder = TextModelBuilder::new(config.model_id.clone());
 
@@ -259,8 +290,7 @@ pub async fn generate(prompt: &str, max_tokens: Option<usize>) -> Result<String>
     let guard = state.lock().await;
 
     let limit = max_tokens.unwrap_or(DEFAULT_MAX_TOKENS);
-    let messages = TextMessages::new()
-        .add_message(TextMessageRole::User, prompt);
+    let messages = TextMessages::new().add_message(TextMessageRole::User, prompt);
 
     let request: RequestBuilder = messages.into();
     let request = request
@@ -279,14 +309,18 @@ pub async fn generate(prompt: &str, max_tokens: Option<usize>) -> Result<String>
         .choices
         .first()
         .and_then(|c| c.message.content.as_ref())
-        .map(|s| s.to_string())
+        .map(|s| extract_visible_content(s))
         .unwrap_or_default();
 
     Ok(content)
 }
 
 /// Generate with system prompt
-pub async fn generate_with_system(system: &str, user: &str, max_tokens: Option<usize>) -> Result<String> {
+pub async fn generate_with_system(
+    system: &str,
+    user: &str,
+    max_tokens: Option<usize>,
+) -> Result<String> {
     let state = LLM::get_state()?;
     let guard = state.lock().await;
 
@@ -312,7 +346,7 @@ pub async fn generate_with_system(system: &str, user: &str, max_tokens: Option<u
         .choices
         .first()
         .and_then(|c| c.message.content.as_ref())
-        .map(|s| s.to_string())
+        .map(|s| extract_visible_content(s))
         .unwrap_or_default();
 
     Ok(content)
@@ -321,9 +355,7 @@ pub async fn generate_with_system(system: &str, user: &str, max_tokens: Option<u
 /// Summarize content to target length
 pub async fn summarize(content: &str, target_words: usize) -> Result<String> {
     let system = "You are a concise summarizer. Output only the summary, nothing else.";
-    let user = format!(
-        "Summarize in about {target_words} words:\n\n{content}"
-    );
+    let user = format!("Summarize in about {target_words} words:\n\n{content}");
 
     // Words to tokens ratio is ~1.3, add buffer
     let max_tokens = (target_words as f32 * 1.5) as usize + 20;
@@ -337,9 +369,9 @@ pub async fn polish(chunks: &[&str], query: Option<&str>) -> Result<String> {
     let system = "You organize and clean up text. Remove redundancy, improve flow. Output only the cleaned text.";
 
     let user = match query {
-        Some(q) => format!(
-            "Clean up this content for someone asking: \"{q}\"\n\nContent:\n{content}"
-        ),
+        Some(q) => {
+            format!("Clean up this content for someone asking: \"{q}\"\n\nContent:\n{content}")
+        }
         None => format!("Clean up this content:\n\n{content}"),
     };
 
@@ -476,6 +508,24 @@ mod tests {
         assert!(smol.model_id.contains("SmolLM2"));
 
         let qwen = LLMConfig::default();
-        assert!(qwen.model_id.contains("Qwen"));
+        assert!(qwen.model_id.contains("Qwen3"));
+    }
+
+    #[test]
+    fn test_extract_visible_content_without_thinking() {
+        let content = extract_visible_content("final answer");
+        assert_eq!(content, "final answer");
+    }
+
+    #[test]
+    fn test_extract_visible_content_with_thinking_block() {
+        let content = extract_visible_content("<think>internal</think>\nfinal answer");
+        assert_eq!(content, "final answer");
+    }
+
+    #[test]
+    fn test_extract_visible_content_with_unclosed_thinking_block() {
+        let content = extract_visible_content("<think>internal only");
+        assert_eq!(content, "");
     }
 }
