@@ -284,8 +284,15 @@ async fn main() {
         .layer(DefaultBodyLimit::max(50 * 1024 * 1024))
         .layer(cors);
 
-    // Server address
-    let addr = SocketAddr::from(([0, 0, 0, 0], 8080));
+    // Server address. FORGETLESS_PORT lets several instances (and the integration tests) run
+    // side by side; a value that is not a port fails loudly instead of silently using 8080.
+    let port = match std::env::var("FORGETLESS_PORT") {
+        Ok(value) => value
+            .parse::<u16>()
+            .unwrap_or_else(|_| panic!("FORGETLESS_PORT must be a port number, got {value:?}")),
+        Err(_) => 8080,
+    };
+    let addr = SocketAddr::from(([0, 0, 0, 0], port));
     println!("forgetless server listening on http://{}", addr);
 
     // Start server

@@ -43,7 +43,7 @@ cargo add forgetless --features cuda
 
 ```bash
 cargo install forgetless --features server
-forgetless-server  # Runs on http://localhost:8080
+forgetless-server  # Runs on http://localhost:8080 (FORGETLESS_PORT=9000 to change the port)
 ```
 
 ## Basic Usage
