@@ -12,22 +12,24 @@ const PREVIEW_MAX_CHARS: usize = 2000;
 fn extract_pdf_with_pdftotext(path: &Path) -> Option<String> {
     use std::process::Command;
 
-    // Try pdftotext first (fast and accurate)
+    // Try pdftotext first (fast and accurate). A missing binary must not end the
+    // function early: it falls through to the raw extraction below.
     let output = Command::new("pdftotext")
         .arg("-layout") // Preserve layout
         .arg("-nopgbrk") // No page breaks
         .arg(path)
         .arg("-") // Output to stdout
-        .output()
-        .ok()?;
+        .output();
 
-    if output.status.success() {
-        let text = String::from_utf8_lossy(&output.stdout);
-        let cleaned = text.trim().to_string();
-        if !cleaned.is_empty() {
-            // Add filename as header
-            let name = path.file_name()?.to_string_lossy();
-            return Some(format!("# {}\n\n{}", name, cleaned));
+    if let Ok(output) = output {
+        if output.status.success() {
+            let text = String::from_utf8_lossy(&output.stdout);
+            let cleaned = text.trim();
+            if !cleaned.is_empty() {
+                // Add filename as header
+                let name = path.file_name()?.to_string_lossy();
+                return Some(format!("# {}\n\n{}", name, cleaned));
+            }
         }
     }
 
